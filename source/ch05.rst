@@ -1,0 +1,132 @@
+Chapter 5: Pointers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+指针是一个包含其它变量，函数，或对象的内存地址的变量，称为指针。
+
+创建指针
+=================
+
+指针的声明与其它变量类似，所不同的是在数据类型与指针名字之间放置一个星号（*）。所用的数据类型决定了它将指向的内存的类型。使用逗号操作符可以在同一条语句中创建多个指针。此时星号必须放置在每一个标识符前而，而不是类型后面。
+
+.. code::
+
+    int* p; // pointer to an integer
+    int *q; // alternative syntax
+    int *a, *b, *c; // multiple pointers
+
+通过在变量前面放置一个取地址符号，获取其地址将其赋值给指针，可以使得指针指向相同类型的变量。
+
+.. code::
+
+    int i = 10;
+    p = &i; // address of i assigned to p
+
+解引用指针
+=================
+
+指针现在包含到整型变量的内存地址。引用指针将会得到该地址。在获取实际存储在地址中的值，指针必须以星号作为前缀，即所谓的解引用操作符（*）。
+
+.. code::
+
+    #include <iostream>
+    using namespace std;
+    int main()
+    {
+        int i = 10;
+        int* p = &i;
+        cout << "Address of i: " << p << endl; // ex. 0017FF1C
+        cout << "Value of i: " << *p << endl; // 10
+    }
+
+当写入指针时，使用相同的方法。如果没有星号，指针被赋予一个新的内存地址，而使用星号，指向的变量的实际内容将会被更新。
+
+.. code::
+
+    p = &i; // address of i assigned to p
+    *p = 20; // value of i changed through p
+
+如果第二个指针被创建，并被赋值第一个指针的值，则它将会是第一个指针的内存地址的一份拷贝。
+
+.. code::
+
+    int* p2 = p; // copy of p (copies address stored in p)
+
+指向指针
+===============
+
+有时拥有一个指向另一个指针的指针会非常有用。这是通过使用两个星号进行声明，然后为其赋它将引用的指针的地址来实现的。这样，当存储在第一个指针中的地址发生变化时，第二个指针可以跟踪该变化。
+
+.. code::
+
+    int** r = &p; // pointer to p (assigns address of p)
+
+现在引用第二个指针将会得到第一个指针的地址。解引用第二个指针将会得到变量的地址，而再次解引用将会得到变量的值。
+
+.. code::
+
+    cout << "Address of p: " << r << endl; // ex. 0017FF28
+    cout << "Address of i: " << *r << endl; // ex. 0017FF1C
+    cout << "Value of i: " << **r << endl; // 20
+
+动态分配
+===============
+
+指针的一个主要用法是在运行时分配内存－所谓的动态分配。在目前为止的示例中，程序仅在编译时拥有变量声明时可用的内存。这即所谓的静态分配，而这些变量存储在所谓的栈上。如果在运行时需要额外的内存，需要使用new操作符。该操作符允许内存的动态分配，此时的内存仅通过指针进行访问，并存储在所谓的堆上。new操作符需要一个基础数据类型或对象类型作为其参数，如果存在足够的可用内存，则会返回指向所分配内存的指针。
+
+.. code::
+
+    int* d = new int; // dynamic allocation
+
+关于动态分配需要了解的重要一点是所分配的内存不会像其它的程序内存那样在不再需要时被释放。相反，它必须使用delete关键字进行手动释放。这允许你控制动态分配对象的生命周期，但它同时意味着当它不再需要时你要负责删除它。忘记删除使用new关键字分配的内存，将会导致程序泄漏，因为内存将会一直保持分配状态，直到程序结束。
+
+.. code::
+
+    delete d; // release allocated memory
+
+在现代C++中，所谓的智能指针的使用要优于普通指针，因为它们移除了手动删除动态分配的内存的需要。这些指针将会在后面的章节中介绍。
+
+空指针
+==============
+
+当指针没有被赋一个可用的地址时，应设置为空。这样的指针被称为空指针。这样做可以允许你检测一个指针能否被安全解引用，因为一个可用的指针绝不应为空。在C++11之前的早期岁月里，常量NULL或整数0被用于标记空指针。NULL常量定义在cstdio标准库文件中，可以通过iostream进行包含。
+
+.. code::
+
+    int* g = 0; // null pointer (unused pointer)
+    int* h = NULL; // null pointer
+
+C++11现在引入了关键字nullptr来指定一个空指针，以区分零与空指针。使用nullptr的优点在于，不同于整数0，nullptr不会隐式转换为整数类型。字面量有其自己的类型，std::nullptr_t，仅能被隐式地转换为指针与布尔类型。
+
+.. code::
+
+    #include <iostream> // include nullptr_t type
+    int main()
+    {
+        int* p = nullptr; // ok
+        int i = nullptr; // error
+        bool b = (bool) nullptr; // false
+        std::nullptr_t mynull = nullptr; // ok
+    }
+
+正如前面所看到的，动态分配的对象通过指针进行访问，并且使用delete关键字删除。需要记住的一点是，在删除之后，指针将会指向一个不可用的内存位置。尝试解引用这样的指针会导致运行时错误。
+
+.. code::
+
+    int* m = new int; // allocate memory for object
+    delete m; // deallocate memory
+    *m = 5; // error: write access violation
+
+为了避免这种问题，被删除的指针被设置为空。注意，尝试删除一个已经删除的空指针是安全的。然而，如果指针已经被设置为空，尝试再次删除它将会导致内存破坏，并可能崩溃程序。
+
+.. code::
+
+    delete m;
+    m = nullptr; // mark as null pointer
+    delete m; // safe
+
+因为你并不能总是知道一个指针是否可用，当解引用指针时应该进行检测来确保它不为空。
+
+.. code::
+
+    if (m != nullptr) { *m = 5; } // check for valid pointer
+    if (m) { *m = 5; } // alternative

@@ -1,0 +1,135 @@
+Chapter 22: Namespaces
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+通过将实体，例如类与函数，组织在单独的作用域下，名字空间可以用来避免命名冲突。在下面的代码中，有两个属于全局作用域的类。由于两个类具有相同的名字与作用域，因而代码不能被编译。
+
+.. code::
+
+    class Table {};
+    class Table {}; // error: class type redefinition
+
+解决该问题的一种方法就是重命名其中的一个类。另一种方案是将其中一个或两个封装在名字空间块中而置于不同的名字空间下。从而使得类属于不同的作用域，从而不会导致命名冲突。
+
+.. code::
+
+    namespace furniture
+    {
+        class Table {};
+    }
+    namespace html
+    {
+        class Table {};
+    }
+
+访问名字空间的成员
+====================
+
+在名字空间之外访问名字空间中的成员，你必须指定成员的全部限定名。这意味着成员名字必须以其所属于的名字空间作为前缀，后跟作用域解析操作符。
+
+.. code::
+
+    int main()
+    {
+        furniture::Table fTable;
+        html::Table hTable;
+    }
+
+嵌套名字空间
+===================
+
+可以将名字空间嵌套任意层级来组织代码。
+
+.. code::
+
+    namespace furniture
+    {
+        namespace wood { class Table {}; }
+    }
+
+在C++17中，名字空间的嵌套可以简写为下列形式。
+
+.. code::
+
+    namespace furniture::wood { class Table {}; }
+
+当由另一个名字空间中使用该类时，确保使用完全名字空间层次结构来指定嵌套名字空间成员。
+
+.. code::
+
+    furniture::wood::Table fTable;
+
+导入名字空间
+================
+
+为了避免在每次使用名字空间成员时都要指定名字空间，可以借助于using指令将名字空间导入到全局或局部作用域。该指令包含using namespace关键字后跟要导入的名字空间。它可以放置于局部或全局位置。放置于局部位置时，指令将会作用于代码块结束之前的作用域内，而位于全局位置，它将应用于位于其声明之后的整个源文件中。
+
+.. code::
+
+    using namespace html; // global namespace import
+    int main()
+    {
+        using namespace html; // local namespace import
+    }
+
+要记住的是，将名字空间导入到全局作用域内破坏了使用名字空间的主要目的，即避免命名冲突。然而，这样的冲突，是使用多个独立开发的代码库的工程中的主要问题。
+
+名字空间成员导入
+======================
+
+如果你希望同时避免输入完全限定名字与导入整个名字空间，还有第三种选择。即仅由名字空间中导入所需要的特定成员。这是通过在using声明中同时声明一个成员来实现的，这是由using关键字后跟要导入的完全限定的名字空间成员组成。
+
+.. code::
+
+    using html::Table; // import a single namespace member
+
+名字空间别名
+=================
+
+另一种简化完全限定名的方法是创建名字空间别名。此时使用namespace关键字后跟别名，并使用完全限定名字空间进行赋值。
+
+.. code::
+
+    namespace myAlias = furniture::wood; // namespace alias
+
+然后可以使用此别名来替换名字空间限定符。
+
+.. code::
+
+    myAlias::Table fTable;
+
+注意，名字空间别名，以及using指令与using声明，可以局部或全局声明。
+
+类型别名
+================
+
+也可以为类型创建别名。类型别名是使用using语句定义的。使用该语法，关键字using后跟别名并赋类型。
+
+.. code::
+
+    using MyType = furniture::wood::Table;
+
+然后别名可以用作指定类型的替代。
+
+.. code::
+
+    MyType t;
+
+在using语句被引入到C++11之前，类型别名是使用typedef定义的。在这样的语句中，typedef关键字后跟类型名与别名。两种声明别名的方法是等同的，但是using语句更优，因为它被认为要比typedef语句更易读。
+
+.. code::
+
+    typedef furniture::wood::Table MyType;
+
+别名应小心使用，因为它们会混淆代码。然而，如果正确使用，类型别名可以简化较长或迷惑的类型名字。它们所提供的另一个功能是由一个位置改变类型定义的能力。
+
+包含名字空间成员
+=======================
+
+记住，在C++中仅仅导入名字空间并没有提供对名字空间中所包含的成员的访问。为了访问名字空间成员，同时需要使得原型可用，例如，通过使用相应的#include指令。
+
+.. code::
+
+    // Include input/output prototypes
+    #include <iostream>
+    // Import standard library namespace to global scope
+    using namespace std;

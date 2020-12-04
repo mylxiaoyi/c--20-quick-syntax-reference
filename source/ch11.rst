@@ -1,0 +1,482 @@
+Chapter 11: Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+函数是仅在调用时执行的可重用代码块。
+
+定义函数
+================
+
+函数可以通过输入void后跟函数名，括号与代码块的方式创建。void关键字意味着函数不会返回值。函数的常见命名约定是使用与变量命名相同的方式进行命名－描述性的名字，每个单词的第一个字母大写，第一个单词除外。
+
+.. code::
+
+    #include <iostream>
+    using namespace std;
+    void myFunction()
+    {
+        cout << "Hello World";
+    }
+
+调用函数
+=================
+
+前面的函数会在调用时简单地输出一条文本。要从主函数中对其调用，指定函数名后跟括号。
+
+.. code::
+
+    int main()
+    {
+        myFunction(); // "Hello World"
+    }
+
+函数参数
+===============
+
+函数名后的括号用于向函数传递参数。要这样做，你必须首先以逗号分隔的列表的形式向函数声明添加相应的参数。
+
+.. code::
+
+    void myFunction(string a, string b)
+    {
+        cout << a << " " << b;
+    }
+
+一个函数可以定义来处理任意数量的参数，而这些参数可以是任意的数据类型。只需要确保函数以相同的类型与参数数量进行调用。
+
+.. code::
+
+    myFunction("Hello", "World"); // "Hello World"
+
+更精确地说，形参（parameters）出现在函数定义中，而实参（arguments）出现在函数调用中。然而，两个术语经常被错误地使用。
+
+默认参数值
+===============
+
+通过在参数列表中为参数赋一个值可以指定参数的默认值。
+
+.. code::
+
+    void myFunction(string a, string b = "Earth")
+    {
+        cout << a << " " << b;
+    }
+
+那么，如果在函数调用时没有指定该参数，则会使用默认值。为此，具有默认值的参数位于无默认值的参数的右侧是很重要的。
+
+.. code::
+
+    myFunction("Hello"); // "Hello Earth"
+
+函数重载
+==============
+
+在C++中，一个函数可以使用不同的参数进行多次定义。这是一种被函数重载的强大特性，它允许函数处理多种参数，而程序员不必关心使用不同的函数。
+
+.. code::
+
+    void myFunction(string a, string b) { cout << a << " " << b; }
+    void myFunction(string a) { cout << a; }
+    void myFunction(int a) { cout << a; }
+
+返回语句
+=============
+
+函数可以返回一个值。void关键字可以替换为函数返回的数据类型，return关键字必须添加到函数体中，后跟指定的返回类型参数。记住，函数中的所有分支都必须返回一个值。
+
+.. code::
+
+    int getSum(int a, int b)
+    {
+        return a + b;
+    }
+
+返回是一种使得函数退出的跳转语句，并向函数的调用位置返回指定的值。例如，前面定义的函数可以用于输出流，因为函数计算得到了一个整数。
+
+.. code::
+
+    cout << getSum(5, 10); // "15"
+
+return语句也可以用于void函数中，从而在到达函数块结束之前退出。
+
+.. code::
+
+    void dummy() { return; }
+
+注意，尽管main函数被设置为返回一个整数类型，它无需显式地返回一个值。这是因为编译会自动在main函数的结束时添加return 0语句。
+
+前面声明
+==============
+
+在C++中需要记住的重要一点是，函数必须在它们被调用之前声明。这并不意味着它们在调用之前必须被实现。它仅意味着在源文件的起始处需要指定函数的头文件，从而编译器知道函数存在。这种前面声明被称为原型。
+
+.. code::
+
+    void myFunction(int a); // prototype
+    int main()
+    {
+        myFunction(0);
+    }
+    void myFunction(int a) {} // definition
+
+在原型中并不需要包含参数名，只需要指定数据类型。然而，包含名字可以扮演一种文档角色，而且它们可以显示在IntelliSense中，所以包含名字是一种好习惯。
+
+.. code::
+
+    void myFunction(int);
+
+按值传递
+=============
+
+在C++中，基础数据类型与对象数据类型默认均是按值传递的。这意味着仅是值或对象的拷贝被传递给函数。所以，对参数的任何修改不会影响原始值，而传递较大的对象将会很慢。
+
+.. code::
+
+    #include <iostream>
+    #include <vector>
+    using namespace std;
+    void change(int i) { i = 10; }
+    void change(vector<int> a) { a.at(0) = 5; }
+    int main()
+    {
+        int x = 0; // value type
+        change(x); // copy of x is passed
+        cout << x; // "0"
+        vector<int> v { 3 }; // reference type
+        change(v); // object copy is passed
+        cout << v.at(0); // "3"
+    }
+
+按引用传递
+==============
+
+与之相对，另一种传递方式是按引用传递变量，你只需要在函数中在参数名前面添加一个取地址符号即可。当参数按引用传递时，基础数据类型与对象数据类型都会被修改，而且修改会影响原始变量。
+
+.. code::
+
+    void change(int& i) { i = 10; }
+    int main()
+    {
+        int x = 0; // value type
+        change(x); // reference is passed
+        cout << x; // "10"
+    }
+
+按地址传递
+=============
+
+作为按引用传递的另一种方式，参数也可以使用指针按地址传递。这种传递技术与按引用传递实现相同的目的，但却使用指针语法。
+
+.. code::
+
+    void change(int* i) { *i = 10; }
+    int main()
+    {
+        int x = 0; // value type
+        change(&x); // address is passed
+        cout << x; // 10
+    }
+
+一个区别在于一个指针可以为空，而引用不可。所以如果函数不允许空参数，最好使用按引用传递的方式。
+
+返回值，引用或地址
+=======================
+
+除了按值，按引用或按地址传递变量外，变量也可以使用这些方式中的一种返回。通常，函数按值返回，此时，值的一份拷贝被返回给调用者。
+
+.. code::
+
+    int byVal(int i) { return i + 1; }
+    int main()
+    {
+        int a = 10;
+        cout << byVal(a); // "11"
+    }
+
+相反，要返回引用，在函数的返回类型之后放置一个取地址符号。然后此函数必须返回一个变量，而不能返回表达式或字面量，就像按值返回那样。所返回的变量不应是一个局部变量，因为当函数结束时，这些变量的内存被释放。相反，按引用返回通常用于返回按引用传递给函数的参数。
+
+.. code::
+
+    int& byRef(int& i) { return i; }
+    int main()
+    {
+        int a = 10;
+        cout << byRef(a); // "10"
+    }
+
+要按地址返回，你在函数的返回类型之后添加一个解引用操作符（*）。这种返回技术具有与按引用返回相同的两种限制－必须返回变量的地址而且所返回的变量不能是函数的局部变量。
+
+.. code::
+
+    int* byAdr(int* i) { return i; }
+    int main()
+    {
+        int a = 10;
+        cout << *byAdr(&a); // "10"
+    }
+
+如果一个函数返回指针，并不清除函数是否已动态分配内存以及该内存应在哪里释放。为此，最好使用按引用返回或者使用后续章节要讨论的智能指针。
+
+内联函数
+==================
+
+当使用函数时需要记住的一点是，每次函数被调用时，都会产生一定的性能损失。要避免这种损失，你可以通过使用inline函数修饰符向编译器内联调用推荐特定的函数。该关键字特别适用于在循环内部调用的小函数。它不应用于较大的函数，因为内联这些函数会极大地增加代码的尺寸，从而会降低性能。
+
+.. code::
+
+    inline int myInc(int i) { return ++i; }
+
+注意，inline关键字只是一种推荐。编译器自身会尝试优化代码，可能会选择忽略该推荐，而会内联一些未使用inline修饰符的函数。现代编译器非常善于自动确定内联哪个函数。
+
+auto与decltype
+=======================
+
+C++11中引入了两个关键字：auto与decltype。这两个关键字均于编译时的类型推导。auto关键字的作用类似于类型的占位符，并指示编译器依据变量的初始化器自动推导变量的类型。
+
+.. code::
+
+    auto i = 5; // int
+    auto d = 3.14; // double
+    auto b = false; // bool
+
+auto关键字转换为初始化器的核心类型，这意味着引用与常量修改符会被丢弃。
+
+.. code::
+
+    const int& iRef = i;
+    auto myAuto = iRef; // int
+
+丢弃的修饰符按需手动重新应用。这里的取地址符创建一个普通（lvalue）引用。
+
+.. code::
+
+    const auto& myRef = iRef; // const int&
+
+与之相对，可以使用两个取地址符。这通常指定rvalue引用，但是在auto的情况下，它会使得编译器基于指定的初始化器自动推断rvalue或lvalue引用。
+
+.. code::
+
+    int i = 1;
+    auto&& a = i; // int& (lvalue reference)
+    auto&& b = 2; // int&& (rvalue reference)
+
+auto修饰符可以用于变量声明与初始化的任意位置。例如，下面的for循环迭代器类型被设置为auto，因为编译器可以很容易地推导类型。注意迭代器被指定为一个引用。这会得到较好的性能，因为它可以避免在循环较大的对象元素时的复制。
+
+.. code::
+
+    #include <iostream>
+    #include <vector>
+    using namespace std;
+    // ...
+    vector<int> myVector { 1, 2, 3 };
+    for (auto& x : myVector) { cout << x; } // "123"
+
+C++11以前并没有基于范围的for循环或auto修饰符。在向量上的迭代需要更为明显的语法，例如下面的语句。
+
+.. code::
+
+    for(vector<int>::size_type i = 0; i != myVector.size(); i++) {
+    cout << myVector[i]; // "123"
+    }
+
+decltype修饰符的作用类似于auto，所不同的是它会推导指定表达式，包括引用，的确切的声明类型。此表达式是以括号形式来指定的。
+
+.. code::
+
+    int i = 1;
+    int& myRef = i;
+    auto a = myRef; // int
+    decltype(myRef) b = myRef; // int&
+
+在C++14中，auto也可以用作decltype的表达式。则关键字auto被替换为初始化表达式，允许推导初始化器的确切类型。
+
+.. code::
+
+    decltype(auto) c = myRef; // int&
+
+当初始化器可用时，使用auto经常是一种更为简单的选择。decltype主要用于前向函数返回类型，而无需考虑它是否为引用类型还是值类型。
+
+.. code::
+
+    decltype(5) getFive() { return 5; } // int
+
+C++11添加了一种尾返回类型语法，跟在箭头（->）后面，允许在参数列表之后指定函数的返回值。这使得在使用decltype推导返回类型时使用参数。此时auto的使用仅仅意味着使用尾返回类型语法。
+
+.. code::
+
+    auto getValue(int x) -> decltype(x) { return x; } // int
+
+这种使用auto用于返回类型推导的能力被添加到C++14中。这使得核心返回类型直接由返回语句推导得到。
+
+.. code::
+
+    auto getValue(int x) { return x; } // int
+
+而且，auto可与decltype配合使用，遵循decltype的规则来推导确切类型。这主要用于使用模板的泛型编程中，此时的类型直到运行时才会确切知道。
+
+.. code::
+
+    decltype(auto) getRef(int& x) { return x; } // int&
+
+类型推导的主要用处在于减少代码的繁琐并改进可读性，特别是声明类型较难知道或较难书写的复杂类型时。记住，在现代IDE中，你可以将鼠标放置在一个变量之上来检测其类型，即使此类型是自动推导的。
+
+返回多个值
+==================
+
+由函数返回多个值的一种简便方法是使用元组。元组是将不同类型的元素组合在一个对象中的对象。
+
+.. code::
+
+    #include <tuple>
+    #include <iostream>
+    using namespace std;
+    tuple<int, double, char> getTuple()
+    {
+        return tuple<int, double, char>(5, 1.2, 'b');
+    }
+
+此函数可以使用auto关键字与std::make_tuple函数进行简化。此函数可以基于所提供的参数自动推导类型并返回元组。
+
+.. code::
+
+    auto getTuple()
+    {
+        return make_tuple(5, 1.2, 'b');
+    }
+
+单个的元组元素可使用std::get函数获取。尖括号（<>）用于指定要获取的元素的索引。另外，如果只有一种类型的元素，可以使用类型名字来获取元素。
+
+.. code::
+
+    int main()
+    {
+        auto mytuple = getTuple();
+        cout << get<0>(mytuple) // "5"
+        << get<char>(mytuple); // "b"
+    }
+
+另一种解包元组的方法是使用std::tie函数，它可以将一个或多个元组元素绑定到指定的参数。std::ignore占位符可以用来略过特定的元组元素。
+
+.. code::
+
+    int main()
+    {
+        int i;
+        double d;
+        // Unpack tuple into variables
+        tie(i, d, ignore) = getTuple();
+        cout << i << " " << d; // "5 1.2"
+    }
+
+在C++17中添加了一种名为结构绑定的特性，为打包与解包元组类对象添加了特别的语言支持。有了此介绍，std::make_tuple函数可以替换下面更为紧凑的代码。
+
+.. code::
+
+    auto getTuple()
+    {
+        return tuple(5, 1.2, 'b');
+    }
+
+解包元素被简化，而不再需要std::tie函数。注意，变量是自动声明的。
+
+.. code::
+
+    int main()
+    {
+        auto [i, d, c] = getTuple();
+        cout << i; // "5"
+    }
+
+Lambda函数
+================
+
+C++11添加了创建lambda函数的能力，即未命名的函数对象。这提供了一种紧凑的方法在使用时定义函数，而无需在其它位置创建一个命名函数或函数对象。下面的示例创建一个接受两个int参数并返回其和的lambda。
+
+.. code::
+
+    auto sum = [](int x, int y) -> int
+    {
+        return x + y;
+    };
+    cout << sum(2, 3); // "5"
+
+如果编译器可以由lambda的返回值推导返回类型，则返回类型是可选的。在C++11中，这要求lambda仅包含一条返回语句，而C++14将返回类型推导扩展到任意的lambda函数。注意，当忽略返因类型时，箭头（->）也要同时省略。
+
+.. code::
+
+    auto sum = [](int x, int y) { return x + y; };
+
+C++11要求lambda参数使用正确的类型进行声明。这一要求在C++14中得到放松，允许lambda使用auto类型推导。这些被称为泛型lambda表达式。
+
+.. code::
+
+    auto sum = [](auto x, auto y) { return x + y; };
+
+lambda通常指定仅引用一次的简单函数，通常将函数对象作为参数传递给另一个函数。这可以使用带有匹配参数列表与返回类型的函数封装器来实现，如下面的示例所示。
+
+.. code::
+
+    #include <iostream>
+    #include <functional>
+    using namespace std;
+    void call(int arg, function<void(int)> func) {
+        func(arg);
+    }
+    int main() {
+        auto printSquare = [](int x) { cout << x*x; };
+        call(2, printSquare); // "4"
+    }
+
+所有的lambda以一对方括号开始，被称为捕捉子句。该子句指定了在lambda体内可以使用的封装作用域。这有效地将额外的参数传递给lambda，而无需在函数封装器的参数列表中指定。所以前面的示例可以重写下面的样子。
+
+.. code::
+
+    void call(function<void()> func) { func(); }
+    int main() {
+        int i = 2;
+        auto printSquare = [i]() { cout << i*i; };
+        call(printSquare); // "4"
+    }
+
+这里的变量被按值捕获，从而在lambda中使用一份拷贝。变量也可以使用类型的取地址前缀按引用捕获。注意，这里的lambda是使用相同的语句来定义与调用的。
+
+.. code::
+
+    int a = 1;
+    [&a](int x) { a += x; }(2);
+    cout << a; // "3"
+
+可以在捕获子句的开始指定默认的捕获模式，来指定lambda中所用的未指定变量如何被捕获。[=]表示这样的变量按值捕获，而[&]则按引用捕获。按值捕获的变量通常是常量，但是可修改修饰符可以用来允许这样的变量被修改。
+
+.. code::
+
+    int a = 1, b = 1;
+    [&, b]() mutable { b++; a += b; }();
+    cout << a << b; // "31"
+
+在C++14中，变量也可以在lambda捕获子句中被初始化。这样的变量将会进行类型推导，就如同它们是使用auto声明的一样。注意，捕获子句后的参数列表可以忽略，如下所示，表明此时参数列表为空，而可修改修饰也未使用。
+
+.. code::
+
+    int a = 1;
+    [&, b = 2] { a += b; }();
+    cout << a; // "3"
+
+不捕获任意变量的lambda被称为无状态的。C++20添加了使得无状态lambda默认可构建与可赋值的能力，从而使得下面的示例是正确的。
+
+.. code::
+
+    auto x = [] { return 3; };
+    // Default construct new lambda of same type
+    decltype(x) y; // valid in C++20
+
+    // Make copy of lambda
+    auto copy = x;
+    // Assign copy to x since they have same type
+    x = copy; // valid in C++20
+
+C++20引入的另一个特性是在未计算的环境中使用lambda的能力，最值得注意的是作为decltype修饰符的表达式。
+
+.. code::
+
+    // Default construct inlined lambda
+    decltype([]{ return 3; }) a; // valid in C++20

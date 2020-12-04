@@ -1,0 +1,134 @@
+Chapter 21: Custom Conversions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+可以定义自定义类型转换从而由另一种类型构建对象或将对象转换为另一种类型。在下面的示例中，有一个名为MyNum的类，其中包含一个整数域。通过转换构造函数，可以允许整数类型隐式地转换为此对象类型。
+
+.. code::
+
+    class MyNum
+    {
+        int value;
+    };
+
+隐式转换构造器
+=====================
+
+要使得此种转换类型正常工作，需要添加一个处理指定类型参数的构造函数，在此情况下为int。
+
+.. code::
+
+    class MyNum
+    {
+    public:
+        MyNum(int i) : value(i) {}
+    private:
+        int value;
+    };
+
+当一个整数被赋值给MyNum类型的对象时，此构造器将会被隐式调用来执行类型转换。
+
+.. code::
+
+    MyNum a = 5; // implicit conversion
+
+这意味着任何仅需要一个参数的构造函数可以用于构造对象或执行到对象类型的隐式类型转换。
+
+.. code::
+
+    MyNum b(5); // object construction
+    MyNum c = 5; // implicit conversion
+
+这种转换不仅适用于指定参数类型，而且可以适用于任何可以隐式转换为该类型的类型。例如，char可以隐式转换为int，因而也可以隐式转换为MyNum对象。
+
+.. code::
+
+    MyNum d = 'H'; // implicit conversion (char->int->MyNum)
+
+当使用花括号初始化器时，甚至带有多个参数的构造器也可以作为转换构造器。在下面的示例中，整数列表被隐式转换为Point。
+
+.. code::
+
+    class Point
+    {
+    public:
+        Point(int x, int y) : x(x), y(y) {}
+    private:
+        int x, y;
+    };
+    int main()
+    {
+        Point p = { 1,2 };
+    }
+
+显式转换构造器
+====================
+
+为了避免潜在的不希望的对象类型转换，也可以禁止转换构造器的隐式使用。可以应用explicit构造器修饰符，从而指定构造器仅用于对象而不用于类型转换。
+
+.. code::
+
+    class MyNum
+    {
+    public:
+        int value;
+        explicit MyNum(int i) { value = i; }
+    };
+
+当创建该类型的对象时必须使用隐式构造器语法或显式转换。
+
+.. code::
+
+    MyNum a = 5; // error
+    MyNum b(5); // allowed
+    MyNum c = MyNum(5); // allowed
+    MyNum d = static_cast<MyNum>(5); // allowed
+
+转换操作符
+=================
+
+自定义转换操作符允许以其它方向指定转换：由对象类型到另一种类型。使用operator关键字，后跟目标类型，括号与方法体。方法体返回目标类型的值，在此情况下为int。
+
+.. code::
+
+    class MyNum
+    {
+    public:
+        int value;
+        operator int() { return value; }
+    };
+
+当该类的对象在int环境下进行计算时，转换操作符将会被调用来执行类型转换。
+
+.. code::
+
+    MyNum a { 5 };
+    int i = a; // 5
+
+显式转换操作符
+========================
+
+C++11标准向语言中添加了显式转换操作符。类似于显式构造器，explicit关键字的使用阻止了转换操作符被隐式调用。
+
+.. code::
+
+    class True
+    {
+    public:
+        explicit operator bool() const {
+            return true;
+        }
+    };
+
+此类提供了一个布尔值，阻止其对象通过bool转换操作符被错误地用于算术环境中。在下面的示例中，第一个比较会导致编译错误，因为bool转换操作符不能被隐式地调用。第二个比较被允许，因为转换操作符被通过类型转换进行显式调用。
+
+.. code::
+
+    True a, b;
+    if (a == b) {} // error
+    if (static_cast<bool>(a) == static_cast<bool>(b)) {} // allowed
+
+记住，需要bool值的环境，例如if语句，被看作显式转换。
+
+.. code::
+
+    if (a) {} // allowed

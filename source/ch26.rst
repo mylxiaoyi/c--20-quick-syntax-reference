@@ -1,0 +1,189 @@
+Chapter 26: Type Conversions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+将表达式由一种类型转换为另一种类型被为类型转换。这可以隐式或显式完成。
+
+隐式转换
+=================
+
+当表达式需要转换为一种兼容类型时，编译器会自动执行隐式转换。例如，基础数据类型之间可以进行隐式转换。
+
+.. code::
+
+    long a = 5; // int implicitly converted to long
+    double b = a; // long implicitly converted to double
+
+这些隐式基础转换可以进一步分为两类：提升（promotion）与降级（demotion）。当表达式隐式转换为较大的类型时发生提升，当将表达式转换为较小的类型时发生降级。由于降级会导致精度损失，因而这些转换会在大部分编译器上生成警告。如果这些潜在的信息损失是有意的，则可以通过使用显式转换来抑制警告。
+
+.. code::
+
+    // Promotion
+    long a = 5; // int promoted to long
+    double b = a; // long promoted to double
+
+    // Demotion
+    int c = 10.5; // warning: possible loss of data
+    bool d = c; // warning: possible loss of data
+
+显式转换
+================
+
+第一种显式转换是由C继承的显式转换，通常被称为C风格转换。所要求的数据类型只是简单地放置在括号中置于需要转换的表达式的左侧。在现在C++代码中应避免这种转换。
+
+.. code::
+
+    int c = (int)10.5; // double demoted to int
+    char d = (char)c; // int demoted to char
+
+C++转换
+~~~~~~~~~~~~~
+
+C风格转换适用于大部分基础数据类型之间的转换。然而，当涉及到对象与指针之间的转换时，它可以更为强大。为了更好地控制不同的可能转换类型，C++引入了四种新的转换，被称为命名转换或新风格转换。这些转换与static，reinterpret，const与dynamic转换。
+
+.. code::
+
+    static_cast<new_type> (expression)
+    reinterpret_cast<new_type> (expression)
+    const_cast<new_type> (expression)
+    dynamic_cast<new_type> (expression)
+
+正如这里所看到的，它们的格式是包含转换名字，新新类型置于尖括号中，而后将要转换的表达式放置在括号中。这些转换允许更精确地控制应如何执行一个转换，从而可以使得编译器更容易捕获转换错误。相对应地，C风格的转换以一种操作包含static，reinterpret与const转换。如果使用不正确，这种转换更可能出现转换错误。
+
+static转换
+================
+
+静态转换执行兼容类型之间的转换。它类似于C风格的转换，但更为严格。例如，C风格转换可以允许一个整型指针指向字符。
+
+.. code::
+
+    char c = 10; // 1 byte
+    int *p = (int*)&c; // 4 bytes
+
+由于四个字节指针中的结果指向一个字节的分配内存，写入此指针将会导致运行时错误或是覆盖相邻的内存。
+
+.. code::
+
+    *p = 5; // runtime error: stack corruption
+
+与C风格转换相对，静态转换将会允许编译器检测指针与指向的数据类型是否兼容，从而允许程序在编译过程中捕获这种不正确的指针赋值。
+
+.. code::
+
+    int *q = static_cast<int*>(&c); // compile-time error
+
+reinterpret转换
+=====================
+
+要强制指针转换，使用与C风格转换相同的方式，则可以使用reinterpret转换。
+
+.. code::
+
+    int *r = reinterpret_cast<int*>(&c); // forced conversion
+
+这种转换处理不相关类型之间的转换，例如由一种指针类型到另一种不兼容的指针类型。它将会简单地执行数据的二进制拷贝而不会修改底层的位模式。注意这种底层操作的结果是系统特定的，因而是不可移植的。如果不能避免则应小心使用。
+
+const转换
+==================
+
+第三种C++转换是const转换。这种转换主要用于添加或删除变量的const修饰符。
+
+.. code::
+
+    const int myConst = 5;
+    int *nonConst = const_cast<int*>(&myConst); // removes const
+
+尽管常量转换可以允许常量的值被修改，但是这样做依然是不合法的代码，可能会导致运行时异常。例如，如果常量位于只读内存部分，则可能发生此类情况。
+
+.. code::
+
+    *nonConst = 10; // potential runtime error
+
+相反，常量转换主要用于需要非常量指针参数的函数的情况，尽管它并不会修改指向的内容。
+
+.. code::
+
+    void print(int *p) { std::cout << *p; }
+
+则此函数可以通过合用const转换来传递常量变量。
+
+.. code::
+
+    print(&myConst); // error: cannot convert const int* to int*
+    print(nonConst); // allowed
+
+C风格与新风格转换
+========================
+
+记住，C风格转换也可以移除const修饰符，但由于它在幕后执行此转换，C++转换更为可取。使用C++转换的另一个原因在于，相比于C风格转换，它们在代码中更容易找到。这很重要，因为转换错误很难发现。使用C++转换的第三个原因它们写起来令人讨厌，这是故意如此的，从而程序员可以寻找不同的解决方案。
+
+dynamic转换
+================
+
+第四个也是最后一个C++是动态转换。此种转换仅用于在继承层次结构中将对象指针或对象引用转换为另一种指针或引用类型。仅当通过执行运行时检测检测指针指向目标类型的完全对象，确保指向的对象可以被转换时才会执行此转换。为能够执行运行检测，对象必须是多态的。也就是，类必须至少定义或继承一个虚函数。这是因为编译器仅会为此类对象生成所需要的运行时类型信息。
+
+在下面的代码片段中，使用动态转换将MyChild指针转换为MyBase指针。这种子类到基类的转换可以成功，因为Child对象包含完全的Base对象。
+
+.. code::
+
+    class MyBase { public: virtual void test() {} };
+    class MyChild : public MyBase {};
+    int main()
+    {
+        MyChild *child = new MyChild();
+        MyBase *base = dynamic_cast<MyBase*>(child); // ok
+        // ...
+        delete child;
+    }
+
+下面的示例尝试将MyBase指针转换为MyChild指针。由于Base对象并不包含完全MyChild对象，此指针转换将会失败。为表示此类失败，动态转换将会返回一个空指针。这会为程序员提供一种方便的方法来在运行时检测转换是否成功。
+
+.. code::
+
+    MyBase *base = new MyBase();
+    MyChild *child = dynamic_cast<MyChild*>(base);
+    if (child == nullptr) cout << "Null pointer returned";
+    delete base;
+
+如果是引用而不是指针被转换，动态转换将会失败并抛出bad_cast异常。这需要使用try-catch语句进行处理。
+
+.. code::
+
+    #include <exception>
+    #include <iostream>
+    using namespace std;
+    class MyBase { public: virtual void test() {} };
+    class MyChild : public MyBase {};
+    int main()
+    {
+        MyBase *base = new MyBase();
+        try {
+            MyChild &child = dynamic_cast<MyChild&>(*base);
+        }
+            catch(const bad_cast &e) {
+            cout << e.what(); // "bad dynamic_cast"
+        }
+        delete base;
+    }
+
+dynamic或static转换
+===========================
+
+使用动态转换的优点在于它允许程序在运行时检测转换是否成功。其缺点则在于执行此检测所付出的性能代价。为此，在第一个示例中使用静态转换更可取，因为子类到基类的转换绝不会失败。
+
+.. code::
+
+    MyBase *base = static_cast<MyBase*>(child); // ok
+
+然而，在第二个示例中，转换可能成功，也可能失败。如果MyBase对象包含一个MyBase实例，则转换会失败，而如果它包含一个MyChild实例，则会成功。在某些条件下，这直到运行时才会知道。如果是此类情况，则动态转换要优于静态转换。
+
+.. code::
+
+    // Succeeds for a MyChild object
+    MyChild *child = dynamic_cast<MyChild*>(base);
+
+如果使用静态转换而不是动态转换执行基类到子类的转换，则转换不会失败。它会返回一个指向不完全对象的指针。解引用此类指针会导致运行时错误。
+
+.. code::
+
+    // Allowed, but invalid
+    MyChild *child = static_cast<MyChild*>(base);

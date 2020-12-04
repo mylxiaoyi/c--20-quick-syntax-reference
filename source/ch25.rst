@@ -1,0 +1,102 @@
+Chapter 25: Exception Handling
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+异常处理允许开发者处理程序中可能发生的未期望的情况。
+
+抛出异常
+===============
+
+当函数遇到它不能从中恢复的情况时，它会生成一个异常来通知调用者函数已失败。这是通过使用throw关键字后跟函数希望通知的内容来实现的。当到达该语句时，函数会停止执行，而异常将会向上传播直到使用try-catch语句可以的捕获的调用者。
+
+.. code::
+
+    double divide(double x, double y)
+    {
+        if (y == 0) throw 0;
+            return x / y;
+    }
+
+try-catch语句
+=====================
+
+try-catch语句由一个包含可能会引起异常的代码的try块与一个或多个处理异常的catch子句组成。在前面的情况下，一个整数被抛出，所以需要包含catch块来处理这种类型异常。抛出的异常将会作为参数传递给此异常处理器，从而可以用来确定此函数发生了什么问题。注意，当异常被处理时，执行将会继续运行try-catch块后的语句，而不会影响throw语句。
+
+.. code::
+
+    try {
+        divide(10,0);
+    }
+    catch(const int& e) {
+        cout << "Error code: " << e;
+    }
+
+异常处理器可以捕获通过值，通过引用，或通过指针抛出的异常。然而，应避免使用通过值捕获，因为这会导致额外的拷贝。通过常量引用捕获通常更为可取。如果try中的代码能够抛出多种类型异常，那么也需要添加多个catch子句来处理。记住，只有匹配所抛出异常的处理器将会执行，而处理器则以它们出现在代码中的顺序进行尝试。
+
+.. code::
+
+    catch(const char& e) {
+        cout << "Error char: " << e;
+    }
+
+要捕获所有类型的异常，可以使用省略号（...）作为catch的参数。此默认处理器必须作为最后一个catch语句，因为其后的处理器不会被执行。
+
+重新抛出异常
+=================
+
+如果异常处理器不能由异常中恢复，可以通过不指定参数的throw关键字重新抛出。这会异常向上传递给调用栈，直到遇到另一个try-catch块。然而要小心，由于如果异常不会被捕获，则程序会因运行时错误终止。
+
+.. code::
+
+    int main()
+    {
+        try {
+            try { throw 0; }
+            catch(...) { throw; } // rethrow exception
+        }
+        catch(...) { throw; } // runtime error
+    }
+
+noexcept修饰符
+=====================
+
+noexcept修饰符意味着函数不会抛出任何异常。使用noexcept的主要好处在于它允许特定的编译器优化，因为修饰器会在异常仍然发生时允许程序终止而不破坏调用栈。
+
+.. code::
+
+    void foo() noexcept {} // must not throw exceptions
+    void bar() {} // may throw exceptions
+
+由C++11开始，noexcept修饰符也可以用作编译时操作符来检测一个函数是否被声明为不抛出任何异常。注意，对于C++17，异常规范已经成为类型系统的一部分，所以当将一个函数指针绑定到此函数时需要包含noexcept属性。
+
+.. code::
+
+    void(*pFunc)() noexcept = foo; // function pointer
+    pFunc(); // call function through pointer
+    cout << noexcept(pFunc); // "1" (true)
+
+在此示例中，pFunc是一个无需参数并返回void的函数指针。
+
+Exception类
+===================
+
+正如前面所提到的，C++中可以抛出任何数据类型。然而，标准库确实提供了一个名为exception的基类，特别设计用来声明要抛出的异常。更为特定的异常可以通过派生此基类或标准库中的其它的异常类来创建。异常类定义在异常头文件中，并且位于std名字空间下。正如下面的代码所示，此类可以使用一个变为异常描述的字符串进行构造。
+
+.. code::
+
+    #include <exception>
+    using namespace std;
+    void makeError()
+    {
+        throw exception("My Error Description");
+    }
+
+当捕获此异常时，调用的对象函数可以使用what来获取描述。
+
+.. code::
+
+    try {
+        makeError();
+    }
+    catch (const exception& e) {
+        cout << e.what(); // "My Error Description"
+    }

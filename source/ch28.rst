@@ -1,0 +1,450 @@
+Chapter 28: Templates
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+模板提供了一种方法使得类，函数或变量处理不同的数据类型，而无需为每种类型重写代码。
+
+函数模板
+==============
+
+下面的示例展示了交换两个整数参数的函数。
+
+.. code::
+
+    void swap(int& a, int& b)
+    {
+        int tmp = a;
+        a = b;
+        b = tmp;
+    }
+
+要将此方法转换为能够处理任意类型的函数模板，第一步是在函数前添加模板参数声明。此声明包含template关键字后跟关键字typename以及模板类型参数名，两者均包含在尖括号中。模板参数名可以是任意名字，但通常将其命名为大写T。
+
+.. code::
+
+    template<typename T>
+
+或者可以使用关键字class替换typename。在此语境下它们等同。
+
+.. code::
+
+    template<class T>
+
+创建函数模板的第二步是将数据类型替换为模板类型参数。
+
+.. code::
+
+    template<class T>
+    void swap(T& a, T& b)
+    {
+        T tmp = a;
+        a = b;
+        b = tmp;
+    }
+
+函数模板现在已完成。要使用模板函数，你可以像调用普通函数一样调用swap，但在需要在函数名前的尖括号中指定所需的模板参数。在幕后，编译器将会使用所填充的模板参数实例化一个新函数，而在此行所调用的是生成的函数。
+
+.. code::
+
+    int a = 1, b = 2;
+    swap<int>(a,b); // calls int version of swap
+
+每次使用新类型调用模板函数时，编译器将会使用模板实例化一个新函数。
+
+.. code::
+
+    bool c = true, d = false;
+    swap<bool>(c,d); // calls bool version of swap
+
+在此示例中，也可以不指定模板参数调用swap函数模板。这是因为编译器能够自动确定类型，因为函数模板的参数使用模板类型。然而，如果不是此类情况，或者需要强制编译器来选择特定的函数模板实例，则需要在括号中显式指定模板参数。
+
+.. code::
+
+    int e = 1, f = 2;
+    swap(e,f); // calls int version of swap
+
+多模板参数
+================
+
+通过将模板参数添加到括号中并以逗号分隔，模板也可以定义为接受多个模板参数。
+
+.. code::
+
+    template<class T, class U>
+    void swap(T& a, U& b)
+    {
+        T tmp = a;
+        a = b;
+        b = tmp;
+    }
+
+此示例中的第二个模板参数允许swap使用两个不同类型的参数进行调用。
+
+.. code::
+
+    int main()
+    {
+        int a = 1;
+        long b = 2;
+        swap<int, long>(a,b);
+        swap(a,b); // alternative
+    }
+
+类模板
+==============
+
+类模板允许类成员使用模板参数作为类型。它们使用与函数模板相同的方式进行创建。
+
+.. code::
+
+    template<class T>
+    class MyBox
+    {
+    public:
+        T a, b;
+        MyBox(const T& x, const T& y) : a(x), b(y) {}
+    };
+
+基于传递给类构造器的参数，编译器可以推断模板类型参数。
+
+.. code::
+
+    int main()
+    {
+        // Without type deduction
+        MyBox<int> box(1, 2); // MyBox<int>
+        // With type deduction
+        MyBox box(2.1, 3.2); // MyBox<double>
+    }
+
+当使用类模板时需要记住的另一点是，如果一个方法在类模板的外部定义，此定义必须以模板声明作为前缀。
+
+.. code::
+
+    template<class T>
+    class MyBox
+    {
+    public:
+        T a, b;
+        void swap();
+    };
+
+    void MyBox<T>::swap()
+    {
+        T tmp = a;
+        a = b;
+        b = tmp;
+    }
+
+注意，模板参数包含在类名限定符后的swap模板函数定义中。这指定了函数的模板参数与类的模板参数相同。
+
+非类型参数
+===================
+
+在类参数之外，类与函数模板还可以拥有普通的函数类参数。例如，unsigned int模板参数用来指定数组的大小。
+
+.. code::
+
+    template<class T, unsigned int N>
+    class MyBox
+    {
+    public:
+        T store[N];
+    }
+
+当此类模板被实例化时，需要同时包含类型与整数。
+
+.. code::
+
+    MyBox<int, 5> box;
+
+默认类型与值
+=================
+
+类与函数模板参数可以指定默认值与类型。
+
+.. code::
+
+    template<class T = int, int N = 5>
+
+要使用这些默认值，当实例化类模板时，只需要将尖括号留空。
+
+.. code::
+
+    MyBox<> box;
+
+类模板特化
+===================
+
+当传递特定的类型作为模板参数时，如果需要为模板定义一个不同的实现，可以声明一个模板特化。例如，在下面的类模板中，有一个输出类模板域的值的print方法。
+
+.. code::
+
+    #include <iostream>
+    template<class T>
+    class MyBox
+    {
+    public:
+        T a;
+        void print() { std::cout << a; }
+    };
+
+当模板参数为bool时，方法应输出true或false，而不是1或0。一种实现方法是创建一个类模板特化。需要创建类模板的一个重新实现，其中模板参数列表为空。相反，bool特化参数被放置于类模板名字之后，则在实现中使用此数据类型，而不是模板参数。
+
+.. code::
+
+    template<>
+    class MyBox<bool>
+    {
+    public:
+        bool a;
+        void print() { std::cout << (a ? "true" : "false"); }
+    };
+
+当此类模板使用bool作为模板类型实例化时，则会使用此模板特化，而是标准类。
+
+.. code::
+
+    int main()
+    {
+        MyBox<bool> box { true };
+        box.print(); // "true"
+    }
+
+注意，由标准模板到特化模板并没有任何成员继承。整个类需要重新定义。
+
+函数模板特化
+==================
+
+在前面的示例中，由于模板之间的区别仅在于一个函数的区别，因而一种更好的方法是创建一个函数模板特化。这种特化类似于类模板特化，但仅应用于单个函数而不是整个类。
+
+.. code::
+
+    #include <iostream>
+    template<class T>
+    class MyBox
+    {
+    public:
+        T a;
+        template<class T> void print() {
+            std::cout << a;
+        }
+        template<> void print<bool>() {
+            std::cout << (a ? "true" : "false");
+        }
+    };
+
+这样，仅print方法，而不是整个类需要被重新定义。
+
+.. code::
+
+    int main()
+    {
+        MyBox<bool> box = { true };
+        box.print<bool>(); // "true"
+    }
+
+注意，当特化函数被调用时，需要指定模板参数。这不同于类模板特化的情况。
+
+变量模板
+==================
+
+在函数模板与类模板之外，C++14允许变量模板化。这是使用普通的模板语法来实现的。
+
+.. code::
+
+    template<class T>
+    constexpr T pi = T(3.1415926535897932384626433L);
+
+配合constexpr修饰符，模板允许变量的值在编译时为指定的类型进行计算，而无需类型转换。
+
+.. code::
+
+    int i = pi<int>; // 3
+    float f = pi<float>; // 3.14...
+
+variadic模板
+=================
+
+C++11允许模板定义处理变化数量的类型参数。为了演示，考虑下面的函数，返回传递给它的任意整数的和。
+
+.. code::
+
+    #include <iostream>
+    #include <initializer_list>
+    using namespace std;
+    int sum(initializer_list<int> numbers)
+    {
+        int total = 0;
+        for(auto& i : numbers) { total += i; }
+        return total;
+    }
+
+initializer_list类型表明此函数接受一个花括号封装的列表作为其参数，所以函数必须以如下方式进行调用。
+
+.. code::
+
+    int main()
+    {
+        cout << sum( { 1, 2, 3 } ); // "6"
+    }
+
+下面的示例将此函数改变为variadic模板函数。这样的函数进行递归遍历而不是迭代遍历，从而一旦第一个参数已被处理，函数会使用其余的参数调用其自身。
+
+variadic模板是使用省略号（...）操作符后跟名字来指定的。这定义了一个所谓的参数包。参数包被绑定到函数中的参数（... rest），然后当函数递归调用其自身时，解包为单独的参数（rest ...）。
+
+.. code::
+
+    int sum() { return 0; } // end condition
+    template<class T0, class ... Ts>
+    decltype(auto) sum(T0 first, Ts ... rest)
+    {
+        return first + sum(rest ...);
+    }
+
+此variadic模板函数可以像普通函数一样，使用任意数量的参数进行调用。相对于前面定义的variadic函数，此模板函数可以接受任意类型的参数。
+
+.. code::
+
+    int main()
+    {
+        cout << sum(1, 1.5, true); // "3.5"
+    }
+
+fold expressions
+=======================
+
+C++17引入了fold表达式，从而能够在一条语句中将二进制操作符应用于参数包中的所有元素。这可以使得前面的variadic模板函数以更为紧凑的方式进行编写，而无需使用递归。
+
+.. code::
+
+    template<class... T>
+    decltype(auto) sum(T... args)
+    {
+        // Unpacks to: a1 + (a2 + (a3 + a4))...
+        return (args + ...);
+    }
+
+这里在返回语句中执行了一个一元right fold，由左开始展开参数包，并且在返回结果之前将二元操作符应用于所有参数。通过将省略号放置在参数包的左侧，参数包也可以由右至左展开，如下面使用减法操作符的示例所示。
+
+.. code::
+
+    #include <iostream>
+    using namespace std;
+    template<class... T>
+    decltype(auto) difference(T... args)
+    {
+        // Unpacks to: ...(a1 - a2) - a3
+        return (... - args);
+    }
+    int main()
+    {
+        cout << difference(5, 2, 1); // "2" (5-2-1)
+    }
+
+concepts
+=================
+
+concept是一个限制模板可以使用哪些模板参数的命名约束集合。它们在C++20中被引入，以允许模板参数在编译时进行类型检测。下面的示例定义了一个名为MyIntegral的concept，要求类型可以转换为完整的整数类型。这里所使用的is_integral_v类模板是标准库的一部分，如果T是一个整型类型，则它被计算为真。
+
+.. code::
+
+    #include <concepts>
+    #include <type_traits>
+    // Concept declaration
+    template <class T>
+    concept MyIntegral = std::is_integral_v<T>;
+
+此concept可以应用于约束模板参数，例如用于下面的函数模板。用于初始化此函数模板的模板参数必须满足concept的要求，否则将会编辑失败。
+
+.. code::
+
+    template<MyIntegral T>
+    bool is_positive(T a)
+    {
+        return a > 0;
+    }
+    int main()
+    {
+        is_positive(5); // ok, int satisfies MyIntegral
+        is_positive("Hi"); // error, string does not satisfy MyIntegral
+    }
+
+标准库包含了大量预定义concept，当可能时应尽量使用预定义concept而不是用户定义的concept。在此示例中，标准concept std::integral执行与MyIntegral相同的功能，所以前面的函数模板可以重新定义为如下代码。
+
+.. code::
+
+    #include <concepts>
+    template<std::integral T>
+    bool is_positive(T a)
+    {
+        return a > 0;
+    }
+
+有两种表达concept的方法。第一种方法是以条件表达式的形式，这是前面定义的整型concept所用的形式。下面的示例使用整型concept，并且添加了第二个约束以确保类型是带符号的而不是无符号的。注意，此约束利用了使用负数构建无符号类型会返回正值的事实，因为无符号类型不能表达负值。
+
+.. code::
+
+    template <class T>
+    concept Signed_Integral = std::integral<T> && T{-1} < T{0};
+
+定义concept的第二种方法是使用require子句。此子句定义了要测试的类型的对象，然后是一个或多个约束列表。每个约束由花括号中的表达式后跟期待的返回类型构成。例如，下面的concept声明了类型必须同时实现等于与不等于操作符，而且这些操作的结果必须可以转换为bool。
+
+.. code::
+
+    template<class T>
+    concept Equal = requires(T a, T b)
+    {
+        { a == b } -> bool;
+        { a != b } -> bool;
+    };
+    template<Equal T>
+    bool areEqual(T x, T y)
+    {
+        return x == y;
+    }
+    int main()
+    {
+        areEqual(1, 1); // true
+    }
+
+简记函数模板
+====================
+
+在C++20中，通过使用auto占位符类型可以对函数模板进行简记。当auto出现在参数列表中时，函数自动变为函数模板，而auto参数变为其模板参数。将concept应用于这样的函数是通过将concept的名字添加到参数列表中类型的前面来实现的。但要记住，简记函数模板并Visual Studio 2019中并不支持。
+
+.. code::
+
+    #include <concepts>
+    bool is_positive(std::integral auto a)
+    {
+        return a > 0;
+    }
+
+    int main()
+    {
+        is_positive(2); // calls int version
+        is_positive(3L); // calls long version
+    }
+
+模板lambda
+==================
+
+C++14引入了泛型lambda，意味着声明为auto的参数变为模板参数。下面的示例定义了返回向量尺寸的泛型lambda。
+
+.. code::
+
+    #include <iostream>
+    #include <vector>
+    using namespace std;
+    int main()
+    {
+        vector<int> v { 1, 2, 3 };
+        auto get_size = [](const auto& v) { return size(v); };
+        cout << get_size(v); // 3
+    }
+
+限制此lambda仅作用于向量类型更为可取。C++20中添加了此能力，允许lambda中模板参数的完全使用。
+
+.. code::
+
+    auto get_size = []<typename T>(vector<T> const& v) { return size(v); };

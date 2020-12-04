@@ -1,0 +1,122 @@
+Chapter 14: Inheritance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+继续允许一个类获取其它类的成员。在下面的示例中，Square继续自Rectangle。这是通过在类名后使用冒号后跟public关键字以及要继续的类名来指定的。
+
+.. code::
+
+    class Rectangle
+    {
+    public:
+        int x, y;
+        int getArea() { return x * y; }
+    };
+    class Square : public Rectangle {};
+
+这里Rectangle变为Square的基类，而Square变为Rectangle的派生类。除了其自己的成员，Square获得了对Rectangle中成员的所有访问，除了其构造器与析构器。
+
+向上转换
+================
+
+一个对象可以向上转换为其基类，因为它包含其基类所包含的所有内容。向上转换是通过将对象赋值给基类类型的指针或引用来实现的。在下面的示例中，Square对象被向上转换为Rectangle。当使用Rectangle的接口时，Square对象将会被看作一个Rectangle，从而仅Rectangle的成员可以被访问。
+
+.. code::
+
+    Square s;
+    Rectangle& r = s; // reference upcast
+    Rectangle* p = &s; // pointer upcast
+
+派生类可以用于需要基类的任意位置。例如，Square对象可以作为参数传递给需要Rectangle对象的函数。然后派生对象将会被隐式地向上转换为其基类类型。
+
+.. code::
+
+    void setXY(Rectangle& r)
+    {
+        r.x = 2;
+        r.y = 3;
+    }
+    int main()
+    {
+        Square s;
+        setXY(s);
+    }
+
+向下转换
+===============
+
+指向Square对象的Rectangle引用或指针可以向下转换为Square对象。向下转换需要显式执行，因为将一个实际的Rectangle向下转换为Square是不允许的，并且可能会在运行时破坏程序。
+
+.. code::
+
+    Square& a = static_cast<Square&>(r); // reference downcast
+    Square* b = static_cast<Square*>(p); // pointer downcast
+
+构造器继承
+===============
+
+为确保基类中的域被正确地初始化，当创建派生类的对象时，基类的无参数构造器会被自动调用。
+
+.. code::
+
+    #include <iostream>
+    using namespace std;
+    class B1
+    {
+    public:
+        int x;
+        B1() : x(5) {}
+    };
+    class D1 : public B1 {};
+    int main()
+    {
+        D1 d; // calls parameterless constructors of D1 and B1
+        cout << d.x; // "5"
+    }
+
+如果在基类中没有默认的构造器，派生类必须调用正确的基类构造器。通过将基类的构造器放置在派生类的构造器的初始化器列表中，由派生类构造器可以显式调用基类构造器。这允许将参数传递给基类构造器。
+
+.. code::
+
+    class B2
+    {
+    public:
+        int x;
+        B2(int a) : x(a) {}
+    };
+
+    class D2 : public B2
+    {
+    public:
+        D2(int i) : B2(i) {} // call base constructor
+    };
+
+此种情况的另一种解决方案是继承构造器。在C++11中，这可以使用using语句实现。
+
+.. code::
+
+    class D2 : public B2
+    {
+    public:
+        using B2::B2; // inherit all constructors from B2
+        int y { 0 };
+    };
+    int main()
+    {
+        D2 d(3); // call inherited B2 constructor
+        cout << d.x; // "3"
+    }
+
+注意，基类构造器不能初始化派生类中的域。所以，派生类中的声明的域应初始化其自身。这里是使用统一初始化来实现的。 
+
+多继承
+=================
+
+C++允许由多个基类继承。这被称为多继承。此时基类是通过逗号分隔的列表来指定的。
+
+.. code::
+
+    class Person {};
+    class Employee {};
+    class Teacher: public Person, public Employee {};
+
+多继承通常并不使用，因为通过单继承可以更好地描述大部分真实世界中的关系。同时它也会极大地增加代码的复杂性。

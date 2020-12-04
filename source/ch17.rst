@@ -1,0 +1,91 @@
+Chapter 17: Static
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+static关键字被用于创建属于类本身，仅存在一份拷贝的类成员。这些成员在类的所有实例之间共享。这不同于实例（非静态）成员，它们是作为每个新对象的拷贝而创建的。
+
+静态域
+===============
+
+静态域（类域）是在类的声明之外初始化的。此初始化仅会执行一次，然而在程序的整个生命周期中，静态域会保持初始化状态。
+
+.. code::
+
+    class MyCircle
+    {
+    public:
+        double r; // instance field (one per object)
+        static double pi; // static field (only one copy)
+    };
+    double MyCircle::pi = 3.14159;
+
+要由类外访问静态成员，使用类的名字后跟作用域解析操作符与静态成员的名字。这意味着为了访问其静态成员无需创建类的实例。
+
+.. code::
+
+    int main()
+    {
+        double p = MyCircle::pi;
+    }
+
+所有成员都必须在类外进行初始化的规则有两个例外。第一个例外是如果静态域是整型与枚举类型并且使用const修饰符声明为常量时。第二个例外是域使用inline修饰符时，这是C++17引入的特性。
+
+.. code::
+
+    class MyClass
+    {
+        static inline double myDouble = 1.23;
+        static const int myInt = 1;
+    };
+
+静态方法
+==============
+
+除了域，方法也可以声明为static，在此情况下，它们也可以无需创建类的实例而进行调用。然而，由于静态方法并不是任何实例的一部分，它不能使用实例成员，因为它并没有一个隐式的this指针。所以方法仅在执行独立于实例变量的通用功能时才应被声明为static。相对于静态方法，实例方法可以同时使用静态与实例成员。
+
+.. code::
+
+    class MyCircle
+    {
+    public:
+        double r;
+        static inline double pi = 3.14159;
+        double getArea() { return pi * r * r; }
+        static double newArea(double a) { return pi * a * a; }
+    };
+    int main()
+    {
+        double a = MyCircle::newArea(1);
+    }
+
+静态局部变量
+=================
+
+函数内部的局部变量可以声明为static，从而使得函数在程序的生命周期内记住该变量。局部变量仅在执行第一次遇到声明时执行一次初始化，然后每次后续执行时会忽略该声明。
+
+.. code::
+
+    void myFunc()
+    {
+        static int count = 0; // holds # of calls to function
+        count++;
+    }
+
+静态全局变量
+=================
+
+static关键字可以应用的最后一个位置是全局变量。这可以将变量的访问性限制在当前文件，从而可以用来帮助避免命名冲突。
+
+.. code::
+
+    // Only visible within this source file
+    static int myGlobal;
+
+这种static的应用很少使用。将代码实例限定在单个源文件中的更好的方法是将其封装在一个未命名的名字空间中。
+
+.. code::
+
+    namespace
+    {
+        // Only visible within this source file
+        int myGlobal;
+    }

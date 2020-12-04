@@ -1,0 +1,121 @@
+Chapter 12: Classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+类是用于创建对象的模板。要定义一个类，你使用关键字class后跟一个名字，代码块以及分号。类的一个常用命名约定是使用混合形式，即每个单词的第一个字母大写。
+
+.. code::
+
+    class MyRectangle {};
+
+类的成员可以在类的内部声明；两种重要的成员类型为域与方法。域是变量，并且存放对象的状态。方法是函数，并且定义了对象可以做什么。
+
+.. code::
+
+    class MyRectangle
+    {
+        int x, y;
+    };
+
+类的方法通常声明为类内部的原型，而真正的实现则放置在类定义之后。然后类外部的方法需要以类名为前缀以及作用域解析操作符，以指定方法属于哪个类。
+
+.. code::
+
+    class MyRectangle
+    {
+        int x, y;
+        int getArea();
+    };
+    int MyRectangle::getArea() { return x * y; }
+
+内联方法
+================
+
+如果方法很短小，而你希望向编译器推荐方法的代码应插入（内联）到调用者的代码中，一种方法是在方法的定义中包含inline关键字。
+
+.. code::
+
+    inline int MyRectangle::getArea() { return x * y; }
+
+一种更为方便的方法是在简单地在类的内部定义方法。这会隐式地向编译器推荐方法应被内联。
+
+.. code::
+
+    class MyRectangle
+    {
+        int x, y;
+        int getArea() { return x * y; }
+    };
+
+对象创建
+================
+
+现在类的定义完成了。为了使用类，你首先需要创建一个类的对象，也被称为实例。这可以像声明变量一样来实现。
+
+.. code::
+
+    int main()
+    {
+        MyRectangle r; // object creation
+    }
+
+访问对象成员
+==================
+
+在对象包含的成员能够被访问之前，它们需要使用public关键字后跟冒号，在类的定义中声明中公开的。没有这个关键字，默认情况下成员将会是私有访问的，从而使其在类的定义之外无法访问。
+
+.. code::
+
+    class MyRectangle
+    {
+        public:
+            int x, y;
+            int getArea() { return x * y; }
+    };
+
+然后可以在实例名字后面使用句点操作符（.）来访问对象的成员。
+
+.. code::
+
+    r.x = 10;
+    r.y = 5;
+    int z = r.getArea(); // 50 (5*10)
+
+基于类可以创建任意数量的对象，而每一个对象有其自己的域与方法集合。
+
+.. code::
+
+    MyRectangle r2; // another instance of MyRectangle
+    r2.x = 25; // not same as r.x
+
+当使用对象指针时，箭头操作符（->）允许访问对象的成员。此操作符类似于句点操作符，不同的是首先解引用指针。
+
+.. code::
+
+    MyRectangle r;
+    MyRectangle *p = &r; // object pointer
+    r.x = 2;
+    r.y = 3;
+    p->getArea(); // 6 (2*3)
+    (*p).getArea(); // alternative syntax
+
+前向声明
+===============
+
+类，类似于函数，必须在它们可以引用之前进行声明。如果在对类的第一次引用之前并没有出现类的定义，则可以在引用之前指定类的原型。
+
+.. code::
+
+    class MyClass; // class prototype
+
+前面声明允许在无需类被完全定义的任意环境下对类的引用。
+
+.. code::
+
+    class MyClass; // class prototype
+    // ...
+    MyClass* p; // allowed
+    MyClass f(MyClass&); // allowed
+    MyClass o; // error, definition required
+    sizeof(MyClass); // error, definition required
+
+注意，即使有原型，你依然不能在类被定义之前创建类的对象。

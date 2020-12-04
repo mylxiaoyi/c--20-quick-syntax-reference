@@ -1,0 +1,142 @@
+Chapter 15: Overriding
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+派生类中的新方法可以重新定义基类中的方法，从而为其提供新的实现。
+
+隐藏派生成员
+=================
+
+在下面的示例中，Rectangle的getArea方法在Triangle中使用相同的签名进行重新声明。签名包括名字，参数列表以及方法的返回类型。
+
+.. code::
+
+    class Rectangle
+    {
+    public:
+        int x, y;
+        Rectangle(int x, int y) : x(x), y(y) {}
+        double getArea() { return x * y; }
+    };
+    class Triangle : public Rectangle
+    {
+    public:
+        Triangle(int a, int b) : Rectangle(a,b) {}
+        double getArea() { return x * y / 2; }
+    };
+
+如果Triangle对象被创建并且调用getArea方法，则方法的Triangle版本将会被调用。
+
+.. code::
+
+    Triangle t { 2,3 }; // uniform initialization
+    t.getArea(); // 3 (2*3/2) calls Triangle's version
+
+然而，如果Triangle被向上转换为Rectangle，则Rectangle的版本将会被调用。
+
+.. code::
+
+    Rectangle& r = t; // upcast
+    r.getArea(); // 6 (2*3) calls Rectangle's version
+
+这是因为重新定义的方法仅是隐藏了继承的方法。这意味着在类层次结构中Triangle的实现被向下重新定义为Triangle的任意子类，而不是向上到基类。
+
+覆盖派生成员
+==================
+
+为在类的层次结构中向上重新定义一个方法－即所谓的覆盖－基类中的方法需要使用virtual修饰符进行声明。此修饰符允许方法在派生类中被覆盖。
+
+.. code::
+
+    class Rectangle
+    {
+    public:
+        int x, y;
+        virtual int getArea() { return x * y; }
+    };
+
+现在由Rectangle接口调用getArea方法将会调用Triangle实现。这被称为多态－当一个方法调用导致不同的方法被执行依赖于调用方法的对象类型。注意，多态需要引用或指针的使用。
+
+.. code::
+
+    Triangle t { 2,3 };
+    Rectangle& r = t;
+    r.getArea(); // 3 (2*3/2) calls Triangle's version
+
+C++11添加了override限定符，以表明方法要替换为继承方法。使用此限定符允许编译器检测是否存在相同签名的虚函数。这可以避免在派生类中偶然创建一个新的虚方法的可能。建议当重写方法时总是包含该限定符。
+
+.. code::
+
+    class Triangle : public Rectangle
+    {
+    public:
+        virtual double getArea() override { return x * y / 2; }
+    };
+
+C++11中引入的另一个限定符是final。此限定符阻止一个虚方法被在派生类中重写。它同时可以避免派生类使用相同的方法签名。
+
+.. code::
+
+    class Base
+    {
+        virtual void foo() final {}
+    };
+    class Derived : public Base
+    {
+        void foo() {} // error: Base::foo marked as final
+    };
+
+final限定符也可以应用于类，从而阻止类被继承。
+
+.. code::
+
+    class B final {};
+    class D : B {}; // error: B marked as final
+
+基类作用域
+===============
+
+在派生类中通过输入类名后跟作用域解析操作符依然能够访问重新定义的方法。这被称为基类作用域，可以用来允许在类层次结构中任意尝试访问重新定义的方法。
+
+.. code::
+
+    class Triangle : public Rectangle
+    {
+    public:
+        Triangle(int a, int b) { x = a; y = b; }
+        int getArea() override { return Rectangle::getArea() / 2; }
+    };
+
+纯虚函数
+==============
+
+有时基类知道所有的派生类必须实现特定的方法，但是基类并不会为此方法提供一个默认实现。则基类可以通过为其赋一个零，将该方法声明为一个纯虚函数，来强制派生类实现该方法。
+
+.. code::
+
+    class Shape
+    {
+    public:
+        virtual double getArea() = 0; // pure virtual function
+    };
+
+具有一个或多个纯虚函数的类被称为抽象类，因为它是不完整的，从而不能被实例化。抽象类主要用于向上转换，从而派生类通过指针或引用类型来使用其接口。
+
+.. code::
+
+    #include <iostream>
+    class Rectangle : public Shape
+    {
+    public:
+        int x = 1, y = 2;
+        virtual int getArea() override { return x * y; }
+    };
+    void printArea(Shape& s) {
+        std::cout << s.getArea();
+    }
+    int main()
+    {
+        Rectangle r;
+        printArea(); // "2"
+    }
+
+仅由纯虚函数构成的类被称为接口。这样的类在功能上与其它语言，例如C#或Java，中的接口相同。

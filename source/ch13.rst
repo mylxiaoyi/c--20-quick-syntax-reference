@@ -1,0 +1,310 @@
+Chapter 13: Constructors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+在域与方法之外，类可以包含构建函数。这是一种用于构建，或实例化对象的特殊方法。它总是与类具有相同的名字，并且没有返回类型。为了能够由其它的类中进行访问，构建函数需要声明在以public访问修饰符标记的区域内。
+
+.. code::
+
+    class MyRectangle
+    {
+        public:
+            int x, y;
+            MyRectangle();
+    };
+    MyRectangle::MyRectangle() { x = 10; y = 5; }
+
+当创建该类的一个新实例时，构造方法将会被调用，在此情况下为域赋默认值。
+
+.. code::
+
+    int main()
+    {
+        MyRectangle s;
+    }
+
+构造器重载
+===============
+
+类似于其它函数与方法，构造器可以被重载。这将允许使用不同的参数列表创建对象。
+
+.. code::
+
+    class MyRectangle
+    {
+        public:
+            int x, y;
+            MyRectangle();
+            MyRectangle(int, int);
+    };
+    MyRectangle::MyRectangle() { x = 10; y = 5; }
+    MyRectangle::MyRectangle(int a, int b) { x = a; y = b; }
+
+在这里定义了两个构造器，对象可以通过无参数或两个参数进行实例化来对域赋值。
+
+.. code::
+
+    // Calls parameterless constructor
+    MyRectangle r;
+    // Calls constructor accepting two integers
+    MyRectangle t(2,3);
+
+C++11为构造器添加了调用其它构造器的能力。使用这一特性，被调用的构造器委托，前面所创建的无参数构造器将会被重新定义来调用第二个构造器。
+
+.. code::
+
+    MyRectangle::MyRectangle() : MyRectangle(10, 5) {}
+
+this关键字
+===============
+
+在构造器内部，以及在对象的其它方法内部－所谓的实例方法－可以使用一种名为this的特殊关键字。这是一个指向类的当前实例的指针。例如，如果构造器的参数名与域名相同时，这会非常有用。则域名依然可以通过使用this指针来访问，即使它们被参数所隐藏。
+
+.. code::
+
+    MyRectangle::MyRectangle(int x, int y)
+    {
+        this->x = x;
+        this->y = y;
+    }
+
+域初始化
+==================
+
+除了在构造器内部对域赋值外，还可以通过使用构造初始化器列表对域进行赋值。列表以构造器参数后面的冒号开始，后跟对域自己的构造器的调用。
+
+.. code::
+
+    MyRectangle::MyRectangle(int a, int b) : x(a), y(b) {}
+
+域也可以在其类的定义中赋初始，这是C++11所添加的一种方便的特性。这是为域赋默认值的推荐方法。初始值会在新实例被创建，而构造器运行之前进行自动赋值。所以，这种赋值可以用于为在构造器内部覆盖的域指定默认值。
+
+.. code::
+
+    class MyRectangle
+    {
+        public:
+            int x = 10;
+            int y = 5;
+    };
+
+前面提到过，引用必须在声明的同时进行设置。所以，引用域不能在构造器体内设置，而必须在类定义或在构造初始化器列表中进行初始化。
+
+.. code::
+
+    class Foo
+    {
+    public:
+        int x;
+        int& ref1 = x;
+        int& ref2;
+        Foo();
+    };
+    Foo::Foo() : ref2(x) {}
+
+默认构造器
+===============
+
+如果并没有类定义构造器，当程序编译时，编译器会自动创建一个默认的无参数构造器。因此，即使没有实现构造器，类也可以实例化。默认构造器将会仅为对象分配内存。它不会初始化域。相对于全局变量，C++中的域不会自动初始化为其默认值。域将会包含其内存位置处所遗留的垃圾数据，直到它们被显式地赋值。
+
+析构器
+===========
+
+除了构造器，类也可以包含一个显式定义的要析构器。它用于释放对象所分配的资源。它是在对象被销毁之前，对象超出作用域或者使用new操作符创建的对象被显式删除时，析构器会被自动调用。析构器的名字与类名相同，但是以波浪（~）为前缀。类仅有一个析构器，而且它不需要任何参数，也不返回任何值。
+
+.. code::
+
+    class Semaphore
+    {
+        bool *sem;
+    public:
+        Semaphore() { sem = new bool; }
+        ~Semaphore() { delete sem; }
+    };
+
+特殊成员函数
+===================
+
+默认构造器与析构器是当类未显式定义时编译器会自动为其提供的两类特殊成员函数。还有其它四种特殊的构造器分别为移动构造器，移动赋值操作符，拷贝构造器以及拷贝赋值操作符。通过C++11标准，可以使用delete与default修饰符来控制是否允许这些特殊的成员函数。delete修饰符禁止函数的调用，而default修饰符显式表明将会使用编译器生成的默认函数。
+
+.. code::
+
+    class A
+    {
+    public:
+        // Explicitly include default constructor
+        A() = default;
+        // Explicitly include default destructor
+        ~A() = default;
+        // Disable move constructor
+        A(A&&) noexcept = delete;
+        // Disable move assignment operator
+        A& operator=(A&&) noexcept = delete;
+        // Disable copy constructor
+        A(const A&) = delete;
+        // Disable copy assignment operator
+        A& operator=(const A&) = delete;
+    };
+
+对象初始化
+=================
+
+C++提供了多种不同的方法来创建对象并初始其域。下面的类将会用于展示这些方法。
+
+.. code::
+
+    class MyClass
+    {
+    public:
+        int i;
+        MyClass() = default;
+        MyClass(int x) : i(x) {}
+    };
+
+直接初始化
+=================
+
+到目前为止所用的对象创建语法被称为直接初始化。该语法包含括号，用于将参数传递给类的构造器。如果使用无参数构造器，则省略括号。
+
+.. code::
+
+    // Direct initialization
+    MyClass a(5);
+    MyClass b;
+
+值初始化
+==============
+
+对象可以被值初始化。此时对象是通过使用类名后跟括号的形式来创建的。括号可以提供构造器参数或留空来使用无括号构造器创建对象。值初始化仅创建一个在语句结束时会被销毁的临时对象。为了保留对象，它必须被拷贝到另一个对象或者赋值给一个引用。将临时对象赋值给引用将保有该对象，直到引用超出其作用域。
+
+.. code::
+
+    // Value initialization
+    const MyClass& a = MyClass();
+    MyClass&& b = MyClass(); // alternative
+
+值初始化的对象与默认初始化创建的对象几乎相同。一点小的区别在于，当使用值初始化时，在某些情况下，非静态域将会被初始化其默认值。
+
+拷贝初始化
+=================
+
+当声明对象时，如果已有的对象被赋值给相同类型的对象，则新对象会被拷贝初始化。这意味着已有对象的每个成员将会被拷贝到新对象。
+
+.. code::
+
+    // Copy initialization
+    MyClass a = MyClass(); // copy temporary object to a
+    MyClass b = a; // copy object a to b
+
+这之所以起作用，是因为编译器提供了隐式拷贝构造器，并会此种赋值进行调用。拷贝构造器需要一个参数，通常是其自己类型的固定引用，然后构造指定对象的拷贝。注意，这种行为不同于许多其它语言，例如Java与C#。在这些语言中，使用另一个对象初始化对象仅会拷贝对象的引用而不会创建新的对象拷贝。拷贝构造器也可以是用户定义的，允许开始进决定对象成员如何进行拷贝。
+
+new初始化
+==============
+
+对象可以使用new关键字通过动态内存分配进行初始化。动态分配的内存必须通过指针或引用来使用。new操作符返回一个指针，从而将其赋值给一个引用，它需要首先进行解引用。记住，动态分配的内存必须在其不再需要时进行显式释放。
+
+.. code::
+
+    // New initialization
+    MyClass* a = new MyClass(); // object pointer
+    MyClass& b = *new MyClass(); // object reference
+    // ...
+    delete a;
+    delete &b;
+
+聚合初始化
+=====================
+
+当初始化对象时有一种被称为聚合初始化的语法简写。此语法允许像数组一样使用花括号括起来的初始化器列表对域进行设置。聚合初始化允可以用于类类型不包含任何构造器，虚函数或基类时使用。同时域必须是公开的，除非它们被声明为静态。每个域以它们出现在类中的顺序进行设置。
+
+.. code::
+
+    // Aggregate initialization
+    MyClass a = { 2 }; // i is 2
+
+统一初始化
+================
+
+C++11引入了统一初始化，像其它类型一样，提供了一种一致的方法来初始化类型。此语法看起来类似于聚合初始化，而无需使用等号。
+
+.. code::
+
+    // Uniform initialization
+    MyClass a { 3 }; // i is 3
+
+此初始化语法不仅适用于类，而且可用于任意类型，包括基础类型，字符串，数组，以及标准库容器，例如向量。
+
+.. code::
+
+    #include <string>
+    #include <vector>
+    using namespace std;
+    int main()
+    {
+        int i { 1 };
+        string s { "Hello" };
+        int a[] { 1, 2 };
+        int *p = new int [2] { 1, 2 };
+        vector<string> box { "one", "two" };
+    }
+
+统一初始化可用于调用构造器。这是通过在花括号中向构造器传递正确的参数来自动实现的。
+
+.. code::
+
+    // Call parameterless constructor
+    MyClass b {};
+    // Call copy constructor
+    MyClass c { b };
+
+类可以定义初始化器列表构造器。此构造器会在统一初始时被调用，当为initializer_list模板所提供的类型与参数的花括号列表的参数匹配时，此构造器会比其它形式的构造器具有更高的优先级。参数列表可以是任意长度，但是所有元素必须是相同类型。在下面的示例中，initializer_list的类型为int，所以用于构造此对象的整数列表被传递给构造器。然后使用基于范围的for循环显示这些整数。
+
+.. code::
+
+    #include <iostream>
+    using namespace std;
+    class NewClass
+    {
+    public:
+        NewClass(initializer_list<int>);
+    };
+
+    NewClass::NewClass(initializer_list<int> args)
+    {
+        for (auto x : args)
+        cout << x << " ";
+    }
+    int main()
+    {
+        NewClass a { 1, 2, 3 }; // "1 2 3"
+    }
+
+特定初始化器（Designated Initializers）
+===========================================
+
+C++20标准引入了特定初始化器，允许在括号封装的初始化列表中通过名字对非静态域赋值。未指定的域将会被初始化为默认值，如下面的示例所示。
+
+.. code::
+
+    class TestClass
+    {
+    public:
+        int a = 1;
+        int b = 2;
+    };
+    int main()
+    {
+        TestClass o1 { .a = 3, .b = 4 }; // ok, a = 3, b = 4
+        TestClass o2 { .a = 5 }; // ok, a = 5, b = 2
+        TestClass o3 { .b = 6 }; // ok, a = 1, b = 6
+    }
+
+特定初始化器可以与统一和聚合初始化配合使用。所有的特定域必须与其类中的声明顺序一致，并且不允许混合特定与非特定初始化器。
+
+.. code::
+
+    int main()
+    {
+        TestClass o4 { .b = 0, .a = 1 }; // error, out of order
+        TestClass o5 { .a = 5, 3 }; // error, designated and non
+        designated
+    }

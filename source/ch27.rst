@@ -1,0 +1,94 @@
+Chapter 27: Smart Pointers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+C++11添加了多个智能指针类用于管理动态分配的内存与资源。通过使用这些容器类，而不是原始指针，不再需要手动删除使用new关键字创建的对象。这样通过助于避免内存泄漏简化了代码编写。
+
+unique指针
+==================
+
+我们要了解的每一个智能指针是唯一指针（std::unique_ptr），它简单地作为原始指针的容器。它替换了另一个被废弃的智能指针，auto_ptr，后者在C++17中被删除。考虑下面的示例来了解如何使用唯一指针。
+
+.. code::
+
+    #include <memory> // include smart pointers
+    #include <iostream>
+    using namespace std;
+    struct Foo
+    {
+        int val;
+        Foo() { cout << "1"; }
+        ~Foo() { cout << "3"; }
+    };
+
+    int main()
+    {
+        unique_ptr<Foo> p(new Foo()); // "1"
+        p->val = 2;
+        cout << p->val; // "2"
+    } // "3"
+
+代码的输出为123，由于指针被创建，使用并在超出作用域时被算动销毁。注意，智能指针并不是通过赋值创建的，而是通过将原始指针传递给其构造器来创建的。然而，一旦创建，就可以像普通指针一样使用智能指针，在此情况下使用箭头操作符（->）来解引用指针并在单一操作中访问对象的成员。
+
+正如其名字所暗示的，唯一指针对于其所指向的对象具有排它性拥有关系，因而不能被拷贝。然而，它可以使用std::move函数将所有关系转移到另一个唯一指针。在完成这样的转移之后，原始指针会被自动设置为nullptr。
+
+.. code::
+
+    unique_ptr<Foo> u1(new Foo());
+    unique_ptr<Foo> u2 = u1; // compile-time error
+    unique_ptr<Foo> u3 = move(u1); // transfers ownership
+
+共享指针
+==============
+
+在需要动态分配的对象的共享关系的情况下，有一个共享指针（std::shared_ptr）。不同于唯一指针，共享指针可以被拷贝。直到最后一个保有拥有此对象的共享指针被销毁时－超出作用域或者手动将指针设置为nullptr，对像的内存才会被释放。
+
+.. code::
+
+    shared_ptr<Foo> s1(new Foo());
+    shared_ptr<Foo> s2 = s1; // extends ownership
+    s1 = nullptr; // reset pointer
+    s2 = nullptr; // reset last pointer and delete memory
+
+在C++14中，在大部分情况下不推荐使用new关键字。相反，当分配动态内存时，推荐使用std::make_unique与std::make_shared函数。
+
+.. code::
+
+    unique_ptr<Foo> u = make_unique<Foo>();
+    shared_ptr<int> s = make_shared<int>(10);
+
+两个助手函数都会执行值初始化。C++20中同时存在默认初始化的方法。这可以避免当不需要初始值时不必要的初始化。在这里使用了类型推导来避免两次输入类型。
+
+.. code::
+
+    auto u2 = make_unique_for_overwrite<Foo>();
+    auto s2 = make_shared_for_overwrite<int>(10);
+
+弱共享指针
+==============
+
+弱共享指针（std::weak_ptr）可以由共享指针来创建。不同于共享指针，北共享指针并不拥有，意味着当所有的共享指针超出作用域时，对象将会被清理，而不顾弱共享指针。为了访问引用的对象，弱共享指针必须首先使用lock方法转换为共享指针。如下面的代码示例所示。
+
+.. code::
+
+    #include <memory>
+    #include <iostream>
+    using namespace std;
+    void observe(weak_ptr<int> weak)
+
+    {
+        shared_ptr<int> s = weak.lock();
+        if (s != nullptr) {
+            cout << "Pointer is " << *s << endl;
+    }
+    else {
+        cout << "Pointer has expired" << endl;
+      }
+    }
+    int main()
+    {
+        shared_ptr<int> s = make_shared<int>(5);
+        weak_ptr<int> w = s; // copy pointer without ownership
+        observe(w); // "Pointer is 5"
+        s = nullptr; // delete managed object
+        observe(w); // "Pointer has expired"
+    }

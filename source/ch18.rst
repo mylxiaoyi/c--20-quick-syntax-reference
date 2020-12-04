@@ -1,0 +1,139 @@
+Chapter 18: Enum Types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+枚举在由命名常量的固定列表所组成的用户定义类型。在下面的示例中，枚举类型被称为Color，并且包含三个常量：red，green与blue。
+
+.. code::
+
+    enum class Color { red, green, blue };
+
+Color类型可以用来创建存储这些常量值中的一个的变量。枚举类常量必须以枚举名为前缀，如下所示。
+
+.. code::
+
+    int main()
+    {
+        Color c = Color::red;
+    }
+
+枚举示例
+===============
+
+switch语句提供了枚举何时有用的良好示例。相比于使用普通常量，枚举具有允许程序员清晰表明变量应被允许包含什么值的优点。
+
+.. code::
+
+    switch(c)
+    {
+        case Color::red: break;
+        case Color::green: break;
+        case Color::blue: break;
+    }
+
+枚举常量值
+=================
+
+通常，无需了解常量表示的底层值，但有时，了解底层值会非常有用。默认情况下，枚举列表中的第一个常量值为零，而后续的每个常量值比前一个大1。
+
+.. code::
+
+    enum class Color
+    {
+        red, // 0
+        green, // 1
+        blue // 2
+    };
+
+通过为常量赋值可以覆盖这些默认值。值可以被计算而无需唯一。未赋值的常量将会具有与前面已赋值的枚举值高的值。
+
+.. code::
+
+    enum class Color
+    {
+        red = 5, // 5
+        green = red, // 5
+        blue = green + 2, // 7
+        yellow // 8
+    };
+
+枚举作用域
+===============
+
+枚举并不一定要全局声明。它也可以被放置在类中作为类成员或是函数局部内。
+
+.. code::
+
+    class MyClass
+    {
+        enum class Color { red, green, blue };
+    };
+    void myFunction()
+    {
+        enum class Color { red, green, blue };
+    }
+
+弱类型枚举
+===============
+
+目前为止所描述的枚举类类型是由C++11引入为由C继承的弱类型枚举提供了一种安全的替换。旧的枚举类型定义与枚举类的定义方式相同，但无需class关键字。
+
+.. code::
+
+    // Weakly typed enum
+    enum Speed
+    {
+        fast,
+        normal,
+        slow
+    };
+
+对于弱类型枚举，指定的常量并不属于枚举名字的作用域。因而这样的枚举常量可以无需枚举名进行引用。
+
+.. code::
+
+    Speed s1 = fast;
+    Speed s2 = Speed::normal;
+
+由于枚举类的类型安全以及其常量限定于枚举名内，因而推荐使用枚举类而不是弱类型枚举。因为枚举类是强类型的，它们不会隐式转换为整数类型。
+
+.. code::
+
+    // Weakly typed enum
+    enum Speed { fast, normal, slow };
+    Speed s = fast;
+    if (s == fast) {} // ok
+    if (s == 0) {} // ok
+    // Strongly typed enum
+    enum class Color { red, green, blue };
+    Color c = Color::red;
+    if (c == Color::red) {} // ok
+    if (c == 0) {} // error
+
+C++20添加了使用using语句将枚举类导入到局部作用域的能力。这可以例在特定的作用域内像普通枚举成员一样访问枚举类成员，从而避免枚举类名的重复。确否不要将枚举导入到一个过大的作用域内，否则会丢失使用强类型枚举的主要好处。
+
+.. code::
+
+    #include <iostream>
+    using namespace std;
+    enum class Color { red, green, blue };
+    void colorPrint(Color c)
+    {
+        // Import enum members to local scope
+        using enum Color;
+        switch (c)
+        {
+            case red: cout << "red";
+            case green: cout << "green";
+            case blue: cout << "blue";
+        }
+    }
+
+枚举常量类型
+===================
+
+标准并没有定义普通枚举底层的整数类型，并且会随着不同的实现而变化。相对应地，枚举类默认总是使用int类型。对于两种枚举类型，类型可以覆盖为另一种整数类型，如下面的示例所示。
+
+.. code::
+
+    // Enum with constant type set to unsigned short
+    enum class MyEnum : unsigned short {};

@@ -1,0 +1,248 @@
+Chapter 29: Headers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+随着工程的增长，通常将代码分割为不同的源文件。当出现这种情况时，接口与实现通常相分隔。接口放置在头文件中，通常与源文件名相同，且以.h作为文件扩展名。头文件包含工程中其它编译单元需要访问的源文件实体的前向声明。编译单元由源文件（.cpp）以及包含的头文件（.h或.hpp）组成。
+
+为什么使用头文件
+=====================
+
+C++要求所有内容在使用之前要声明。仅是简单在相同工程中编译源文件还不够。例如，如果一个函数位于MyFunc.cpp中，而相同工程中名为MyApp.cpp的第二个文件试图调用该函数，编译器将会报告它找不到此函数。
+
+.. code::
+
+    // MyFunc.cpp
+    void myFunc() {}
+    // MyApp.cpp
+    int main()
+    {
+        myFunc(); // error: myFunc identifier not found
+    }
+
+要使其可以调用，必须在MyApp.cpp中包含函数的原型。
+
+.. code::
+
+    // MyApp.cpp
+    void myFunc(); // prototype
+    int main()
+    {
+        myFunc(); // ok
+    }
+
+使用头文件
+=================
+
+如果将原型放置在MyFunc.h的头文件中，并且通过使用#include指令将其包含在MyApp.cpp中，将会更为方便。这样如果对MyFunc.cpp或MyFunc.h进行修改，则无需更新MyApp.cpp中的原型。更进一步，任何希望使用MyFunc.cpp中共享代码的源文件可以包含此头文件。
+
+.. code::
+
+    // MyFunc.h
+    void myFunc(); // prototype
+    // MyApp.cpp
+    #include "MyFunc.h"
+
+在头文件中包含什么
+======================
+
+对于编译器而言，头文件与源文件之间并没有区别。其区别仅在于概念上。关键思想在于头文件应包含实现文件的接口－也就是，其它源文件将需要使用的接口。这也许会包含，例如，共享常量，宏与类型别名。头文件不应使用名字空间指令包含，因为这会强制使用头文件的所有人包含名字空间。
+
+.. code::
+
+    // MyApp.h - Interface
+    #define DEBUG 0
+    const double E = 2.72;
+    using ulong = unsigned long;
+
+正如已经提到的，头文件可以包含定义在源文件中的共享函数的原型。
+
+.. code::
+
+    void myFunc(); // prototype
+
+另外，共享类通常在头文件中指定，而其方法则在源文件中实现。
+
+.. code::
+
+    // MyApp.h
+    class MyClass
+    {
+    public:
+        void myMethod();
+    };
+
+    // MyApp.cpp
+    void MyClass::myMethod() {}
+
+对于函数，在包含其定义的外部编译单元中，全局变量在可以被引用之前必须进行前向声明。这是通过将共享变量放置在头文件中并使用关键字extern进行标识。此关键字表明变量在其它的编译单元中被初始化。函数默认为extern，所以函数原型不需要此修饰符。记住，在一个程序中，全局变量与函数也许会多次声明，但是仅定义一次。
+
+.. code::
+
+    // MyApp.h
+    extern int myGlobal;
+    // MyApp.cpp
+    int myGlobal = 0;
+
+应该注意的并不推荐使用共享全局变量。这是因为程序越大，越难跟踪哪些函数访问并修改了这些变量。更可取的方法是仅在需要时将变量传递给函数，以最小化这些变量的作用域。
+
+头文件不应包含可执行语句，但有两个例外。第一，如果共享的类方法或全局函数被声明为inline，函数必须在头文件内定义。否则，由其它的源文件内调用内联函数会导致未解析的外部错误。注意，inline修饰符抑制通常适用于代码实体的单一定义规则。
+
+.. code::
+
+    // MyApp.h
+    inline void inlineFunc() {}
+    class MyClass
+    {
+    public:
+        void inlineMethod() {}
+    };
+
+第二个例外是共享模板。当遇到一个模板实例时，编译器需要访问模板的实现，以使用所填充的类型参数创建其实例。所以模板的声明与实现通常全部放置在头文件中。
+
+.. code::
+
+    // MyApp.h
+    template<class T>
+    class MyTemp { /* ... */ };
+    // MyApp.cpp
+    MyTemp<int> o;
+
+在多个编译单元中使用相同的类型实现模板会导致编译器与链接完成十分冗余的工作。为此，C++11引入了extern模板声明。标记为extern的模板实例会通知编译器不要在此编译单元中实例化模板。
+
+.. code::
+
+    // MyApp.cpp
+    MyTemp<int> b; // instantiation is done here
+    // MyFunc.cpp
+    extern MyTemp<int> a; // suppress redundant instantiation
+
+如果一个头文件需要其它头文件，通常也会包含这些文件，以使得头文件独立。这确保所需要的所有内容被正确包含，为需要头文件的所有源文件解决潜在的依赖问题。
+
+.. code::
+
+    // MyApp.h
+    #include <stddef.h> // include size_t
+    void mySize(std::size_t);
+
+注意，由于头文件主要包含声明，所包含的额外头文件不会影响程序的大小，尽管它们会减缓编译速度。
+
+内联变量
+===================
+
+在C++17中，除了函数与方法，变量也可以声明为内联。这允许常量与静态变量在头文件中定义，因为内联修改符会删除通常会阻止此种操作的单一定义规则。一旦定义了内联变量，引用此头文件的所有编译单元将会使用相同的定义。
+
+.. code::
+
+    // MyApp.h
+    struct MyStruct
+    {
+        static const int a;
+        inline static const int b = 10; // alternative
+    };
+    inline int const MyStruct::a = 10;
+
+constexpr关键字隐式为内联的，所以声明为constexpr的变量也可以在头文件内初使用化。然而，这样的变量必须被初始化为编译时常量。
+
+.. code::
+
+    struct MyStruct {
+        static constexpr int a = 10;
+    };
+
+内联变量并没有被限制为单纯的常量表达式，如下面的示例所示，内联变量被初始化为1与6之间的随机值。使用此头文件可以确保此值对于所有的编译单元是相同的，尽管此值直到运行时才被设置。
+
+.. code::
+
+    #include <cstdlib> // rand, srand
+    #include <ctime> // time
+    struct MyStruct {
+        static const int die;
+    };
+    inline const int MyStruct::die =
+        (srand((unsigned)time(0)), rand()%6+1); // 1-6
+
+注意这里逗号操作符的使用，首先计算左表达式，然后计算并返回右表达式。左表达式使用当前时间作为随机数生成器srand的种子。右表达式使用rand函数获取一个随机整数并将此整数格式化为1-6范围内。
+
+包含守卫
+==============
+
+当使用头文件时，需要记住的重要一点在于，共享代码实体仅被定义一次。相应地，多次包含相同的头文件会导致编译错误。避免此错误的一种常见方法是使用所谓的include guard。include guard是通过将整个头文件包含在#ifndef部分，这是检测头文件的特定宏。只有当此宏未定义时才会包含此宏。然后此宏被定义，从而有效地阻止此文件被再次包含。
+
+.. code::
+
+    // MyApp.h
+    #ifndef MYAPP_H
+    #define MYAPP_H
+    // ...
+    #endif // MYAPP_H
+
+大部分编译器同时支持非标准的#pragma once指令，使用更少的代码实现与include guard相同的效果。仅需要将此指令放置在头文件以确保它仅被包含一次。
+
+.. code::
+
+    #pragma once
+
+在包含头文件之前，检测它是否存在也是一个好主意。为此，C++17添加了__has_include预处理器表达式，如果找到此头文件则计算为真。
+
+.. code::
+
+    #if __has_include("myapp.h")
+    #include "myapp.h"
+    #endif
+
+模块
+============
+
+模块是被单独编译的一个或多个源码文件集合，然后被导入到其它编译单元中。它们被引入到C++20中来解决与使用头文件相关的问题，例如头文件顺序依赖，命名冲突，以及相同头文件的多次包含。而且，由于模块仅需要被编译一次，它们减少了编译时间，特别是对大型项目。
+
+要打开Visual Studio 2019（版本16.3）中的模块试验支持，在Solution Explorer中右键点击工程，并选择属性。
+
+ixx文件扩展是Visual Studio中模块接口单元中所要求的。其它编译器，例如GCC，则使用cppm文件扩展。在文件中放置导出模块声明来指定模块名字。
+
+.. code::
+
+    // ModInterface.ixx
+    export module mymodule; // declare module name
+
+只有被显式标记为export的代码实体才会为使用模块的源文件可见，即下面示例中的getValue函数。所有其它的代码实体将会是模块内部的，而不会影响模块之外的代码。这是相对于头文件的巨大优势，因为头文件也许会包含影响代码其它部分的代码。
+
+.. code::
+
+    // ModInterface.ixx
+    export module mymodule;
+    #define VALUE 5
+    int hidden() { return VALUE; }
+    export int getValue() { return hidden(); }
+
+可以选择的是，也接口单元相分离，模块的实现可以分割为一个或多个模块实现单元。这样的实现文件不能导出任何名字。它所声明的代码实体将会在整个模块内可见，但对于模块外部不可见。实现文件本身可以使用何意的文件扩展名。
+
+.. code::
+
+    // ModInterface.ixx
+    export module mymodule;
+    export int getValue();
+    // ModImplementation.cpp
+    module mymodule; // unit belongs to mymodule
+
+    #define VALUE 5
+    int hidden() { return VALUE; }
+    int getValue() { return hidden(); }
+
+模块就绪并编译之后，它可以被导入到使用其功能的任意源文件中。导入声明必须位于导入模块的文件的全局作用域内。
+
+.. code::
+
+    // MyApp.cpp
+    import mymodule; // import module
+    #include <iostream>
+    using namespace std;
+    int main()
+    {
+        cout << getValue() << endl; // "5"
+    }
+
+一些标准库头文件，例如iostream与vector，可以像模块一样导入。这并不为Visual Studio 2019（版本16.3）所支持。要记住，不同于include指令，导入声明以分号结束。
+
+.. code::
+
+    import <iostream>;
+    import <vector>;

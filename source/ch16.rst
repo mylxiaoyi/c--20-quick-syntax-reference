@@ -1,0 +1,158 @@
+Chapter 16: Access Levels
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+每个类成员都有一个确定成员可见性的访问级别。在C++中有三种：public，protected与private。类成员的默认访问级别为private。要修改类的某一部分的访问级别，使用访问修饰符，后跟冒号。此标签之后的所有域或方法具有指定的访问级别，直到另一个访问级别被设置或类声明结束。
+
+.. code::
+
+    class MyClass
+    {
+        int myPrivate;
+    public:
+        int myPublic;
+        void publicMethod();
+    };
+
+private访问
+===================
+
+在类内部可以访问所有成员，而无论其访问级别，这被称为封装类。这是唯一可以访问私有成员的地方。
+
+.. code::
+
+    class MyClass
+    {
+        // Unrestricted access
+        public: int myPublic;
+        // Defining or derived class only
+        protected: int myProtected;
+        // Defining class only
+        private: int myPrivate;
+        void test()
+        {
+            myPublic = 0; // allowed
+            myProtected = 0; // allowed
+            myPrivate = 0; // allowed
+        }
+    };
+
+protected访问
+=======================
+
+受保护的成员也可以由派生类的内部访问，但是不能由不相关的类进行访问。
+
+.. code::
+
+    class MyChild : public MyClass
+    {
+        void test()
+        {
+            myPublic = 0; // allowed
+            myProtected = 0; // allowed
+            myPrivate = 0; // inaccessible
+        }
+    };
+
+public访问
+================
+
+公开访问为代码中的任意位置提供无限制的访问。
+
+.. code::
+
+    class OtherClass
+    {
+        void test(MyClass& c)
+        {
+            c.myPublic = 0; // allowed
+            c.myProtected = 0; // inaccessible
+            c.myPrivate = 0; // inaccessible
+        }
+    };
+
+访问级别规则
+===============
+
+作为一条规则，当选择访问级别时，通常最好选择最严格的级别。这是因为成员能够为更多的位置访问，则会有更多的位置对其进行不正确的访问，从而使得代码更难于调试。使用严格的访问级别也可以使得代码更易于修改，而不会破坏使用该类的其他程序员的代码。
+
+当在现实世界编程时，域应总是私有的，而仅通过public或protected的getter与setter方法提供接口。这可以使得域被正确地访问更为容易，因为setter可以检测所赋的值对特定的域合法。通过忽略getter或setter方法，可以限制一个域仅能由类外部进行写或读访问。
+
+.. code::
+
+    class Person
+    {
+    private:
+        int age;
+    public:
+        // Setter
+        void setAge(int a)
+        {
+            if (age > 200) age = 200;
+            else if (age < 0) age = 0;
+            else age = a;
+        }
+        // Getter
+        int getAge()
+        {
+            return age;
+        }
+    };
+
+友元类与函数
+===================
+
+通过将类声明为友元，可以允许该类访问另一个类的私有或受保护成员。这是通过使用friend修饰符来实现的。友元可以被允许访问友元定义所在的类的所有成员。
+
+.. code::
+
+    class MyClass
+    {
+        int myPrivate;
+        // Give OtherClass access
+        friend class OtherClass;
+    };
+    class OtherClass
+    {
+        void test(MyClass& c) {
+            c.myPrivate = 0; // allowed
+        }
+    };
+
+类似地，另一个类的方法可以被标记为友元来允许它访问定义类的所有成员。
+
+.. code::
+
+    class MyClass;
+    class OtherClass
+    {
+    public:
+        void test(MyClass& c);
+        void test2(MyClass& c);
+    };
+    class MyClass
+    {
+        int myPrivate;
+        friend void OtherClass::test(MyClass&);
+    };
+    void OtherClass::test(MyClass& c) {
+        c.myPrivate = 0; // allowed
+    }
+    void OtherClass::test2(MyClass& c) {
+        c.myPrivate = 0; // not allowed
+    }
+
+public，protected与private继承
+===================================
+
+在C++中，当一个类被继承时，它可以修改继承成员的访问级别。public继承允许所有成员保持其原始的访问级别。protected继承将public成员降为protected。private继承将所有的继承成员限制为私有访问。
+
+.. code::
+
+    class MyChild : private MyClass
+    {
+        // myPublic is private
+        // myProtected is private
+        // myPrivate is private
+    };
+
+private是默认的继承级别，仅管public继承是几乎总是用到的继承方式。
